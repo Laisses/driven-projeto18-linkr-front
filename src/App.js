@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import GlobalStyle from "./assets/styles/GlobalStyle";
-import { Timeline } from './components/Timeline';
+import { Timeline } from './pages/Timeline';
 import HashtagPage from './pages/hashtag';
 
 export default function App() {
@@ -13,5 +13,5 @@ export default function App() {
                 <Route path="/hashtag/:hashtag" element={<HashtagPage/>}/>
                 </Routes>
         </BrowserRouter>
-    )
+    );
 }
