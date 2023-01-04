@@ -1,2 +1,1 @@
-const BASE_URL = "LINK DO RENDER DA API BACK END"
-export default BASE_URL
+export const BASE_URL = 'https://linkr-api-cmhm.onrender.com/'

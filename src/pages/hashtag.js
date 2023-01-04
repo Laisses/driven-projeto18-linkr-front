@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import axios from "axios";
-import BASE_URL from "../constants/url";
+import { BASE_URL } from "../constants/url";
 import { Link, useParams } from "react-router-dom";
 import Header from "../constants/header";
 
