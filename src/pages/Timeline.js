@@ -34,13 +34,17 @@ const mockposts = [
 
 const mockuser = {
     name: "Juvenal Juvêncio",
-    photo: "https://i.pinimg.com/736x/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg"
+    photo: "https://i.pinimg.com/736x/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg",
+    token: "12344"
 };
 
 export const Timeline = () => {
     //const [posts, setPosts] = useState(mockposts);
     //const [user, setUser] = useState(mockuser);
-    const [form, setForm] = useState({likes: 0, description: "", link: ""});
+    const [form, setForm] = useState({description: "", link: ""});
+    const [loading, setLoading] = useState(false);
+
+    //const config = { headers: { Authorization: `Bearer ${mockuser.token}`}};
 
     const ListofPosts = post => {
         const {description, link, user} = post;
@@ -93,6 +97,27 @@ export const Timeline = () => {
         setForm({...form, [name]: value});
     };
 
+    const validateURL = url => {
+        const regex = /^((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/;
+
+        return regex.test(url);
+    };
+
+    //async quando usar axios
+    const submitForm = async () => {
+        setLoading(true);
+
+        const validURL = validateURL(form.link);
+
+        if (!validURL) {
+            setLoading(false);
+            return alert("You must choose a valid link!");
+        }
+
+        //setLoading(false)
+        //setForm({description: "", link: ""})
+    };
+
     return (
         <TimelineBackground>
             <TimelineContainer>
@@ -111,6 +136,7 @@ export const Timeline = () => {
                             placeholder="http://..."
                             value={form.link}
                             onChange={handleForm}
+                            disabled={loading}
                             required
                         />
                         <TextInput
@@ -119,8 +145,12 @@ export const Timeline = () => {
                             placeholder="Awesome article about #javascript"
                             value={form.description}
                             onChange={handleForm}
+                            disabled={loading}
                         />
-                        <Button>Publish</Button>
+                        {!loading
+                            ? <Button onClick={submitForm}>Publish</Button>
+                            : <Button disabled={loading}>Publishing</Button>
+                        }
                     </Form>
                 </PublishContainer>
                 <Posts />
@@ -219,7 +249,7 @@ const Button = styled.button`
     border-radius: 5px;
     margin-top: 5px;
     color: #ffffff;
-    background-color: #1877F2;
+    background-color: ${props => !props.disabled ? "#1877F2" : "#1154ab"};
     align-self: flex-end;
 `;
 
