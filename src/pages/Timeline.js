@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import { IconName, IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
-import { useState } from "react";
+import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
+import { useContext, useEffect, useState } from "react";
 
 const mockposts = [
     {
@@ -34,36 +34,59 @@ const mockposts = [
 ];
 
 const mockuser = {
+    id: 1,
     name: "Juvenal Juvêncio",
     photo: "https://i.pinimg.com/736x/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg"
 };
 
 export const Timeline = () => {
-    //const [posts, setPosts] = useState(mockposts);
-    //const [user, setUser] = useState(mockuser);
-    const [postLikes, setPostLikes] = useState([])
+    // const { token, user } = useContext(MyContext);
+    const [posts, setPosts] = useState(mockposts);
+    const [user, setUser] = useState(mockuser);
+    const [postsLikes, setPostsLikes] = useState([])
     const [isLiked, setIsLiked] = useState(false)
+    
 
-    const ListofPosts = post => {
-        const {description, link, user} = post;
-
+    // Alterar a URL
     const getPostLikes = () => {
-        const config = { 
-            body: {"id": id},
-            headers: { Authorization: `Bearer ${token}` } };
-        const request = axios.get("http://localhost:5000/likes", config);
-        request.then((res) => {
-        setPostLikes(res.data);
-        const usersIds = res.data.map(user => user.id)
-        if (usersIds.includes(user.id)) {
-            setIsLiked(true)
-        }
-    });
+        posts.forEach(post => {
+            const config = {
+                body: {"id": post.id}}
+            const request = axios.get("http://localhost:5000/likes", config);
+            request.then((res) => {
+                const newPostsLikes = [...postsLikes, res.data]
+                setPostsLikes(newPostsLikes);
+        });
+        request.catch((err) => {
+            alert("Algo deu errado e a culpa é nossa. =/");
+            console.log(err);
+        });
+        })
+    }
+
+    //ID de todos os posts curtidos por esse usuário
+    const userPostsLiked = [];
+    postsLikes.forEach(postLikes => {
+        postLikes.forEach(postLike => {
+            if (postLike.user_id === user.id) {
+                userPostsLiked.push(postLike.post_id)
+            }
+        })
+    })
+
+    useEffect(getPostLikes, [])
+
+    const likeHandler = () => {
+        
+
     request.catch((err) => {
       alert("Algo deu errado e a culpa é nossa. =/");
       console.log(err);
     });
     }
+
+    const ListofPosts = post => {
+        const {id, user_id, description, link, user} = post;
 
         return (
             <PostsContainer>
@@ -86,8 +109,8 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon>
-                    {!!postLike ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                <LikeIcon onClick={likeHandler}>
+                    {userPostsLiked.includes(id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
             </PostsContainer>
 
