@@ -1,5 +1,5 @@
+import { useState } from "react";
 import styled from "styled-components";
-//import { useState } from "react";
 
 const mockposts = [
     {
@@ -40,6 +40,7 @@ const mockuser = {
 export const Timeline = () => {
     //const [posts, setPosts] = useState(mockposts);
     //const [user, setUser] = useState(mockuser);
+    const [form, setForm] = useState({likes: 0, description: "", link: ""});
 
     const ListofPosts = post => {
         const {description, link, user} = post;
@@ -87,6 +88,11 @@ export const Timeline = () => {
         }
     };
 
+    const handleForm = e => {
+        const {name, value} = e.target;
+        setForm({...form, [name]: value});
+    };
+
     return (
         <TimelineBackground>
             <TimelineContainer>
@@ -103,12 +109,16 @@ export const Timeline = () => {
                             id="link"
                             name="link"
                             placeholder="http://..."
+                            value={form.link}
+                            onChange={handleForm}
                             required
                         />
                         <TextInput
                             id="description"
                             name="description"
                             placeholder="Awesome article about #javascript"
+                            value={form.description}
+                            onChange={handleForm}
                         />
                         <Button>Publish</Button>
                     </Form>
