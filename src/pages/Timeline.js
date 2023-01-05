@@ -1,5 +1,6 @@
 import styled from "styled-components";
-//import { useState } from "react";
+import { IconName, IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
+import { useState } from "react";
 
 const mockposts = [
     {
@@ -40,9 +41,29 @@ const mockuser = {
 export const Timeline = () => {
     //const [posts, setPosts] = useState(mockposts);
     //const [user, setUser] = useState(mockuser);
+    const [postLikes, setPostLikes] = useState([])
+    const [isLiked, setIsLiked] = useState(false)
 
     const ListofPosts = post => {
         const {description, link, user} = post;
+
+    const getPostLikes = () => {
+        const config = { 
+            body: {"id": id},
+            headers: { Authorization: `Bearer ${token}` } };
+        const request = axios.get("http://localhost:5000/likes", config);
+        request.then((res) => {
+        setPostLikes(res.data);
+        const usersIds = res.data.map(user => user.id)
+        if (usersIds.includes(user.id)) {
+            setIsLiked(true)
+        }
+    });
+    request.catch((err) => {
+      alert("Algo deu errado e a culpa é nossa. =/");
+      console.log(err);
+    });
+    }
 
         return (
             <PostsContainer>
@@ -65,6 +86,9 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
+                <LikeIcon>
+                    {!!postLike ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                </LikeIcon>
             </PostsContainer>
 
         );
@@ -277,4 +301,10 @@ const LinkUrl = styled.p`
     font-size: 11px;
     color: #CECECE;
     margin-top: 16px;
+`;
+
+const LikeIcon = styled.div`
+position: relative;
+right: 560px;
+top: 60px;
 `;
