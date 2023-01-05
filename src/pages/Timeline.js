@@ -1,4 +1,6 @@
 import styled from "styled-components";
+import TrendingList from "../components/trending";
+import Header from "../constants/header";
 //import { useState } from "react";
 
 const mockposts = [
@@ -88,46 +90,53 @@ export const Timeline = () => {
     };
 
     return (
-        <TimelineBackground>
-            <TimelineContainer>
-                <Title>timeline</Title>
-                <PublishContainer>
-                    <ProfilePicture
-                        src={mockuser.photo}
-                        alt="profile picture"
-                    />
-                    <Form>
-                        <FormTitle>What are you going to share today?</FormTitle>
-                        <LinkInput
-                            type="text"
-                            id="link"
-                            name="link"
-                            placeholder="http://..."
-                            required
+        <>
+            <Header/>
+
+            <TimelineBackground>
+                <TimelineContainer>
+                    <Title>timeline</Title>
+                    <PublishContainer>
+                        <ProfilePicture
+                            src={mockuser.photo}
+                            alt="profile picture"
                         />
-                        <TextInput
-                            id="description"
-                            name="description"
-                            placeholder="Awesome article about #javascript"
-                        />
-                        <Button>Publish</Button>
-                    </Form>
-                </PublishContainer>
-                <Posts />
-            </TimelineContainer>
-        </TimelineBackground>
+                        <Form>
+                            <FormTitle>What are you going to share today?</FormTitle>
+                            <LinkInput
+                                type="text"
+                                id="link"
+                                name="link"
+                                placeholder="http://..."
+                                required
+                                />
+                            <TextInput
+                                id="description"
+                                name="description"
+                                placeholder="Awesome article about #javascript"
+                                />
+                            <Button>Publish</Button>
+                        </Form>
+                    </PublishContainer>
+                    <Posts />
+                </TimelineContainer>
+
+                <TrendingList/>
+            </TimelineBackground>
+        </>
     );
 };
 
 const TimelineBackground = styled.div`
     background-color: #333333;
+    display: flex;
+    justify-content: center;
 `;
 
 const TimelineContainer = styled.div`
     width: 616px;
-    margin-left: auto;
-    margin-right: auto;
-    padding-top: 78px;
+    margin-right: 50px;
+    padding-top: 70px;
 `;
 
 const Title = styled.h1`
@@ -211,6 +220,7 @@ const Button = styled.button`
     color: #ffffff;
     background-color: #1877F2;
     align-self: flex-end;
+    cursor: pointer;
 `;
 
 const PostsContainer = styled.div`
