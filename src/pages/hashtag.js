@@ -6,7 +6,6 @@ import Header from "../constants/header";
 import TrendingList from "../components/trending";
 import { useEffect, useState } from "react";
 
-
 export default function HashtagPage () {
     const { hashtag } = useParams()
     const [feed, setFeed] = useState([])

@@ -6,7 +6,7 @@ import { BASE_URL } from "../constants/url"
 
 export default function TrendingList () {
     const [list, setList] = useState([])
-
+    
     async function getTrending () {
         try {
             const res = await axios.get(`${BASE_URL}/hashtag`, {token: 'token meramente ilustrativo'});
