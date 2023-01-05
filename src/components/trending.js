@@ -7,18 +7,17 @@ import { BASE_URL } from "../constants/url"
 export default function TrendingList () {
     const [list, setList] = useState([])
 
-    useEffect(() => {
-        // Objeto aleatório representando o token que deve ser mandado no header da requisição
-        // Tem um erro 404 no console.log, mas é por que o PR da rota hashtag ainda não foi aceito
-        const promisse = axios.get(`${BASE_URL}/hashtag`, {token: 'asdasdasdadsas'});
-
-        promisse.then((res) => {
+    async function getTrending () {
+        try {
+            const res = await axios.get(`${BASE_URL}/hashtag`, {token: 'token meramente ilustrativo'});
             setList(res.data)
-        });
-
-        promisse.catch((err) => {
+        } catch (err) {
             console.log(err)
-        });
+        }
+    }
+
+    useEffect(() => {
+        getTrending()
     }, [])
 
     return (

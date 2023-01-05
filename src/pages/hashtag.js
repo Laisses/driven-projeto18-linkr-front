@@ -4,11 +4,25 @@ import { BASE_URL } from "../constants/url";
 import { Link, useParams } from "react-router-dom";
 import Header from "../constants/header";
 import TrendingList from "../components/trending";
+import { useEffect, useState } from "react";
 
-const trendings = ['react', 'html', 'css', 'js', 'angular', 'vue', 'php', 'c++', 'node', 'python']
 
 export default function HashtagPage () {
     const { hashtag } = useParams()
+    const [feed, setFeed] = useState([])
+
+    async function getFeed () {
+        try {
+            const res = await axios.get(`${BASE_URL}/hashtag/${hashtag}`, {token: 'token meramente ilustrativo'})
+            setFeed(res.data)
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
+    useEffect(() => {
+        getFeed()
+    }, [])
 
     return (
         <>
@@ -18,7 +32,7 @@ export default function HashtagPage () {
                 <LeftPart>
                     <h1># {hashtag}</h1>
 
-                    <ul>{trendings.map((t, idx) => <li key={idx}> # {t}</li>)}</ul>
+                    <ul>{feed.map((t, idx) => <li key={idx}> # {t}</li>)}</ul>
                 </LeftPart>
 
                 <TrendingList/>
