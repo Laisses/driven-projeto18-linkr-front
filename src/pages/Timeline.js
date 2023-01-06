@@ -55,7 +55,7 @@ export const Timeline = () => {
     
       useEffect(() => {
         getPosts();
-        getPostLikes
+        getPostLikes();
     }, [setErrorMessage]);    
 
     const likeHandler = (postId) => {
