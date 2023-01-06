@@ -1,9 +1,10 @@
-import { useState } from "react";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { useContext, useEffect, useState } from "react";
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
+import axios from "axios";
+
 
 const mockposts = [
     {
@@ -44,19 +45,20 @@ const mockuser = {
 };
 
 export const Timeline = () => {
-    // const { token, user } = useContext(MyContext);
+    // const { token, user, config } = useContext(MyContext);
     const [posts, setPosts] = useState(mockposts);
     const [user, setUser] = useState(mockuser);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
+    const config = {headers: {
+        authorization: `Bearer ${mockuser.token}`
+    }}
 
     // Alterar a URL
     const getPostLikes = () => {
         posts.forEach(post => {
-            const config = {
-                body: {"id": post.id}}
-            const request = axios.get("http://localhost:5000/likes", config);
+            const request = axios.get("http://localhost:5000/likes", {id: post.id});
             request.then((res) => {
                 const newPostsLikes = [...postsLikes, res.data]
                 setPostsLikes(newPostsLikes);
@@ -78,18 +80,18 @@ export const Timeline = () => {
         })
     })
 
-
-
     useEffect(getPostLikes, [])
 
-    // const likeHandler = () => {
-        
-
-    // request.catch((err) => {
-    //   alert("Algo deu errado e a culpa é nossa. =/");
-    //   console.log(err);
-    // });
-    // }
+    const likeHandler = (postId) => {
+        const request = axios.post("http://localhost:5000/likes", config, {id: postId});
+            request.then((res) => {
+            
+        });
+        request.catch((err) => {
+            alert("Algo deu errado e a culpa é nossa. =/");
+            console.log(err);
+        });
+    }
 
     const ListofPosts = post => {
         const {id, user_id, description, link, user} = post;
@@ -115,7 +117,7 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon onClick={likeHandler}>
+                <LikeIcon onClick={()=>likeHandler(id)}>
                     {userPostsLiked.includes(id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
             </PostsContainer>
