@@ -1,15 +1,17 @@
 import axios from "axios"
 import styled from "styled-components"
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { BASE_URL } from "../constants/url"
+import MyContext from "../contexts/MyContext"
 
 export default function TrendingList () {
     const [list, setList] = useState([])
+    const { config } = useContext(MyContext)
     
     async function getTrending () {
         try {
-            const res = await axios.get(`${BASE_URL}/hashtag`, {token: 'token meramente ilustrativo'});
+            const res = await axios.get(`${BASE_URL}/hashtag`, config);
             setList(res.data)
         } catch (err) {
             console.log(err)
