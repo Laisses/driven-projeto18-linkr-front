@@ -6,43 +6,34 @@ import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
+import { Tooltip } from 'react-tooltip'
+import 'react-tooltip/dist/react-tooltip.css'
 
 export const Timeline = () => {
     const { token, config } = useContext(MyContext);
     const user = {id: 7, name:	"Maria", email:	"maria@email.com", password: "$2b$05$2Rf0/JtX8JmdbL3gQT25AetQKBzbwlm59zIyTz9lmUsTP/RQlYlqm", photo: "https://i.pinimg.com/originals/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg", createdAd: "2023-01-05 22:53:54.81717"}
     const [posts, setPosts] = useState([]);
-    const [postsLikes, setPostsLikes] = useState([])    
+    const [postsLikes, setPostsLikes] = useState({})    
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
-    const [userPostsLiked, setUserPostsLiked] = useState([])
 
-    // Alterar a URL
     const getPostsLikes = () => {
-        posts.forEach(post => {
-            const request = axios.get(`${BASE_URL}/likes`, {id: 2});
-            request.then((res) => {
-                const newPostsLikes = [...postsLikes, res.data]
-                setPostsLikes(newPostsLikes);
-            });
-            request.catch((err) => {
-                alert("Algo deu errado e a culpa é nossa. =/");
-                console.log(err);
-            });
+        const newPostsLikes = {}
+        const promisses = []
+        posts.forEach( (post) => {
+                const request = axios.get(`http://localhost:5000/likes?post_id=${post.id}`, config);
+                promisses.push(request)
+                request.then((res)=>{
+                    newPostsLikes[post.id] = res.data.map(user => user.id)
+                }).catch(error => {
+                    alert("Algo deu errado e a culpa é nossa. =/");
+                console.log(error);
+                })
         })
+        Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
     }
 
-
-    //ID de todos os posts curtidos por esse usuário
-    const getPostsIdLiked = () => {
-    postsLikes.forEach(postLikes => {
-        postLikes.forEach(postLike => {
-            if (postLike.user_id === user.id) {
-                userPostsLiked.push(postLike.post_id)
-            }
-        })
-    })
-}
     
     const getPosts = async () => {
         try {
@@ -59,8 +50,11 @@ export const Timeline = () => {
     
       useEffect(() => {
         getPosts();
-        getPostsLikes();
     }, [setErrorMessage]);    
+
+    useEffect(() => {
+        getPostsLikes();
+    }, [posts]); 
 
     const likeHandler = (postId) => {
         const request = axios.post(`${BASE_URL}/likes`, config, {id: postId});
@@ -74,16 +68,16 @@ export const Timeline = () => {
     }
 
     const ListofPosts = post => {
-        const {id, description, link, user} = post;
+        const {id, description, link, user: u} = post;
 
         return (
             <PostsContainer>
                 <ProfilePicture
-                    src={user.photo}
+                    src={u.photo}
                     alt="profile picture"
                 />
                 <Post>
-                    <Username>{user.name}</Username>
+                    <Username>{u.name}</Username>
                     <Description>{description}</Description>
                     <LinkContainer>
                         <LinkMetaData onClick={() => openNewTab(link.address)}>
@@ -97,9 +91,10 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon onClick={()=>likeHandler(id)}>
-                    {userPostsLiked.includes(id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
+                    {postsLikes[id]?.includes(user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
+                <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
             </PostsContainer>
         );
     };
@@ -109,6 +104,8 @@ export const Timeline = () => {
             return <Message>Loading...</Message>
         } else if (posts.length === 0) {
             return <Message>There are no posts yet</Message>
+        } else if (!Object.keys(postsLikes).length) {
+            return <Message>Loading...</Message>
         } else if (posts) {
             return (
                 <ul>
@@ -383,4 +380,6 @@ const LikeIcon = styled.div`
 position: relative;
 right: 560px;
 top: 60px;
+width: 30px;
+height: 30px;
 `;
