@@ -8,9 +8,10 @@ import { useState } from 'react';
 export default function App() {
     const [token, setToken] = useState("");
     const [user, setUser] = useState("");
+    const config = { headers: { Authorization: `Bearer d0a796bd-aed5-413b-babe-00a21d083c4b`}};
 
     return (
-        <MyContext.Provider value={{token, setToken, user, setUser}}>
+        <MyContext.Provider value={{token, setToken, user, setUser, config}}>
         <BrowserRouter>
             <GlobalStyle />
             <Routes>
