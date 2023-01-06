@@ -7,7 +7,7 @@ import MyContext from "../contexts/MyContext"
 
 export default function TrendingList () {
     const [list, setList] = useState([])
-    const { config } = useContext(MyContext)
+    const { config, setCounter, counter } = useContext(MyContext)
     
     async function getTrending () {
         try {
@@ -20,7 +20,7 @@ export default function TrendingList () {
 
     useEffect(() => {
         getTrending()
-    }, [])
+    }, [counter])
 
     return (
         <Container>
@@ -28,7 +28,7 @@ export default function TrendingList () {
 
             <ul>
                 {list.map((t, idx) => 
-                    <Link to={`/hashtag/${t.name}`} key={idx.toString()}>
+                    <Link onClick={() => setCounter(counter + 1)} to={`/hashtag/${t.name}`} key={idx.toString()}>
                         <li> # {t.name}</li>
                     </Link>)}
             </ul>
