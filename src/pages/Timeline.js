@@ -282,16 +282,24 @@ const LinkImage = styled.img`
 const LinkTitle = styled.h4`
     font-size: 16px;
     color: #CECECE;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const LinkDescription = styled.p`
     font-size: 11px;
     color: #9B9595;
     margin-top: 10px;
+    max-height: 30px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const LinkUrl = styled.p`
     font-size: 11px;
     color: #CECECE;
     margin-top: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `;
