@@ -1,6 +1,9 @@
+import { useState } from "react";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { useContext, useEffect, useState } from "react";
+import TrendingList from "../components/trending";
+import Header from "../constants/header";
 
 const mockposts = [
     {
@@ -36,16 +39,17 @@ const mockposts = [
 const mockuser = {
     id: 1,
     name: "Juvenal Juvêncio",
-    photo: "https://i.pinimg.com/736x/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg"
+    photo: "https://i.pinimg.com/736x/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg",
+    token: "12344"
 };
 
 export const Timeline = () => {
     // const { token, user } = useContext(MyContext);
     const [posts, setPosts] = useState(mockposts);
     const [user, setUser] = useState(mockuser);
-    const [postsLikes, setPostsLikes] = useState([])
-    const [isLiked, setIsLiked] = useState(false)
-    
+    const [postsLikes, setPostsLikes] = useState([])    
+    const [form, setForm] = useState({description: "", link: ""});
+    const [loading, setLoading] = useState(false);
 
     // Alterar a URL
     const getPostLikes = () => {
@@ -74,16 +78,18 @@ export const Timeline = () => {
         })
     })
 
+
+
     useEffect(getPostLikes, [])
 
-    const likeHandler = () => {
+    // const likeHandler = () => {
         
 
-    request.catch((err) => {
-      alert("Algo deu errado e a culpa é nossa. =/");
-      console.log(err);
-    });
-    }
+    // request.catch((err) => {
+    //   alert("Algo deu errado e a culpa é nossa. =/");
+    //   console.log(err);
+    // });
+    // }
 
     const ListofPosts = post => {
         const {id, user_id, description, link, user} = post;
@@ -113,7 +119,6 @@ export const Timeline = () => {
                     {userPostsLiked.includes(id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
             </PostsContainer>
-
         );
     };
 
@@ -134,47 +139,80 @@ export const Timeline = () => {
         }
     };
 
+    const handleForm = e => {
+        const {name, value} = e.target;
+        setForm({...form, [name]: value});
+    };
+
+    const validateURL = url => {
+        const regex = /^((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/;
+
+        return regex.test(url);
+    };
+
+    //async quando usar axios
+    const submitForm = async () => {
+        setLoading(true);
+
+        const validURL = validateURL(form.link);
+
+        if (!validURL) {
+            setLoading(false);
+            return alert("You must choose a valid link!");
+        }
+
+        //setLoading(false)
+        //setForm({description: "", link: ""})
+    };
+
     return (
-        <TimelineBackground>
-            <TimelineContainer>
-                <Title>timeline</Title>
-                <PublishContainer>
-                    <ProfilePicture
-                        src={mockuser.photo}
-                        alt="profile picture"
-                    />
-                    <Form>
-                        <FormTitle>What are you going to share today?</FormTitle>
-                        <LinkInput
-                            type="text"
-                            id="link"
-                            name="link"
-                            placeholder="http://..."
-                            required
+        <>
+            <Header/>
+
+            <TimelineBackground>
+                <TimelineContainer>
+                    <Title>timeline</Title>
+                    <PublishContainer>
+                        <ProfilePicture
+                            src={mockuser.photo}
+                            alt="profile picture"
                         />
-                        <TextInput
-                            id="description"
-                            name="description"
-                            placeholder="Awesome article about #javascript"
-                        />
-                        <Button>Publish</Button>
-                    </Form>
-                </PublishContainer>
-                <Posts />
-            </TimelineContainer>
-        </TimelineBackground>
+                        <Form>
+                            <FormTitle>What are you going to share today?</FormTitle>
+                            <LinkInput
+                                type="text"
+                                id="link"
+                                name="link"
+                                placeholder="http://..."
+                                required
+                                />
+                            <TextInput
+                                id="description"
+                                name="description"
+                                placeholder="Awesome article about #javascript"
+                                />
+                            <Button>Publish</Button>
+                        </Form>
+                    </PublishContainer>
+                    <Posts />
+                </TimelineContainer>
+
+                <TrendingList/>
+            </TimelineBackground>
+        </>
     );
 };
 
 const TimelineBackground = styled.div`
     background-color: #333333;
+    display: flex;
+    justify-content: center;
 `;
 
 const TimelineContainer = styled.div`
     width: 616px;
-    margin-left: auto;
-    margin-right: auto;
-    padding-top: 78px;
+    margin-right: 50px;
+    padding-top: 70px;
 `;
 
 const Title = styled.h1`
@@ -256,8 +294,9 @@ const Button = styled.button`
     border-radius: 5px;
     margin-top: 5px;
     color: #ffffff;
-    background-color: #1877F2;
+    background-color: ${props => !props.disabled ? "#1877F2" : "#1154ab"};
     align-self: flex-end;
+    cursor: pointer;
 `;
 
 const PostsContainer = styled.div`
