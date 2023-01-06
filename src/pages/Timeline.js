@@ -9,17 +9,18 @@ export const Timeline = () => {
     const {config, user} = useContext(MyContext);
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(false);
 
     useEffect(() => {
         getPosts();
-    }, []);
+    }, [setErrorMessage]);
 
     const getPosts = async () => {
         try {
-            const res = await axios.get(`${BASE_URL}/timeline`, config);
+            const res = await axios.get(`${BASE_URL}/imeline`, config);
             setPosts(res.data);
         } catch (error) {
-            console.log(error)
+            setErrorMessage(true);
         }
     };
 
@@ -54,9 +55,9 @@ export const Timeline = () => {
 
     const Posts = () => {
         if (!posts) {
-            return <div>Loading...</div>
+            return <Message>Loading...</Message>
         } else if (posts.length === 0) {
-            return <div>You hanven't published anything yet</div>
+            return <Message>There are no posts yet</Message>
         } else if (posts) {
             return (
                 <ul>
@@ -130,11 +131,16 @@ export const Timeline = () => {
                         }
                     </Form>
                 </PublishContainer>
-                <Posts />
+                {!errorMessage
+                    ? <Posts />
+                    : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
+                }
             </TimelineContainer>
         </TimelineBackground>
     );
 };
+
+
 
 const TimelineBackground = styled.div`
     background-color: #333333;
@@ -162,6 +168,12 @@ const PublishContainer = styled.div`
     border-radius: 16px;
     display: flex;
     margin-bottom: 30px;
+`;
+
+const Message = styled.p`
+    font-family: 'Lato', sans-serif;
+    font-size: 20px;
+    color: #ffffff;
 `;
 
 const ProfilePicture = styled.img`
