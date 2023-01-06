@@ -85,7 +85,6 @@ export const Timeline = () => {
         return regex.test(url);
     };
 
-    //async quando usar axios
     const submitForm = async () => {
         setLoading(true);
 
@@ -96,8 +95,16 @@ export const Timeline = () => {
             return alert("You must choose a valid link!");
         }
 
-        //setLoading(false)
-        //setForm({description: "", link: ""})
+        try {
+            await axios.post(`${BASE_URL}/timeline`, form, config);
+            setLoading(false);
+            setForm({description: "", link: ""});
+            getPosts();
+        } catch (error) {
+            setLoading(false);
+            alert("Houve um erro ao publicar seu link");
+        }
+
     };
 
     return (
