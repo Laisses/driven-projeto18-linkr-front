@@ -1,20 +1,45 @@
-import axios from "axios";
 import { BASE_URL } from "../constants/url";
-import { useState, useContext, useEffect } from "react";
 import styled from "styled-components";
-import MyContext from '../components/MyContext';
+import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
+import { useContext, useEffect, useState } from "react";
+import MyContext from '../contexts/MyContext';
+import TrendingList from "../components/trending";
+import Header from "../constants/header";
+import axios from "axios";
 
 export const Timeline = () => {
+    const { token, user, config } = useContext(MyContext);
     const [posts, setPosts] = useState(undefined);
-    const {config, user} = useContext(MyContext);
+    const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(false);    
 
-    useEffect(() => {
-        getPosts();
-    }, [setErrorMessage]);
+    // Alterar a URL
+    const getPostLikes = () => {
+        posts.forEach(post => {
+            const request = axios.get("http://localhost:5000/likes", {id: post.id});
+            request.then((res) => {
+                const newPostsLikes = [...postsLikes, res.data]
+                setPostsLikes(newPostsLikes);
+        });
+        request.catch((err) => {
+            alert("Algo deu errado e a culpa é nossa. =/");
+            console.log(err);
+        });
+        })
+    }
 
+    //ID de todos os posts curtidos por esse usuário
+    const userPostsLiked = [];
+    postsLikes.forEach(postLikes => {
+        postLikes.forEach(postLike => {
+            if (postLike.user_id === user.id) {
+                userPostsLiked.push(postLike.post_id)
+            }
+        })
+    })
+    
     const getPosts = async () => {
         try {
             const res = await axios.get(`${BASE_URL}/timeline`, config);
@@ -27,9 +52,25 @@ export const Timeline = () => {
     const openNewTab = url => {
         window.open(url, '_blank').focus();
     };
+    
+      useEffect(() => {
+        getPosts();
+        getPostLikes
+    }, [setErrorMessage]);    
+
+    const likeHandler = (postId) => {
+        const request = axios.post("http://localhost:5000/likes", config, {id: postId});
+            request.then((res) => {
+            
+        });
+        request.catch((err) => {
+            alert("Algo deu errado e a culpa é nossa. =/");
+            console.log(err);
+        });
+    }
 
     const ListofPosts = post => {
-        const {description, link, user} = post;
+        const {id, user_id, description, link, user} = post;
 
         return (
             <PostsContainer>
@@ -52,8 +93,10 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
+                <LikeIcon onClick={()=>likeHandler(id)}>
+                    {userPostsLiked.includes(id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                </LikeIcon>
             </PostsContainer>
-
         );
     };
 
@@ -108,46 +151,49 @@ export const Timeline = () => {
     };
 
     return (
-        <TimelineBackground>
-            <TimelineContainer>
-                <Title>timeline</Title>
-                <PublishContainer>
-                    <ProfilePicture
-                        src={user.photo}
-                        alt="profile picture"
-                    />
-                    <Form>
-                        <FormTitle>What are you going to share today?</FormTitle>
-                        <LinkInput
-                            type="text"
-                            id="link"
-                            name="link"
-                            placeholder="http://..."
-                            value={form.link}
-                            onChange={handleForm}
-                            disabled={loading}
-                            required
-                        />
-                        <TextInput
-                            id="description"
-                            name="description"
-                            placeholder="Awesome article about #javascript"
-                            value={form.description}
-                            onChange={handleForm}
-                            disabled={loading}
-                        />
-                        {!loading
-                            ? <Button onClick={submitForm}>Publish</Button>
-                            : <Button disabled={loading}>Publishing</Button>
+        <>
+             <Header/>
+             <TimelineBackground>
+                    <TimelineContainer>
+                        <Title>timeline</Title>
+                        <PublishContainer>
+                            <ProfilePicture
+                                src={user.photo}
+                                alt="profile picture"
+                            />
+                            <Form>
+                                <FormTitle>What are you going to share today?</FormTitle>
+                                <LinkInput
+                                    type="text"
+                                    id="link"
+                                    name="link"
+                                    placeholder="http://..."
+                                    value={form.link}
+                                    onChange={handleForm}
+                                    disabled={loading}
+                                    required
+                                />
+                                <TextInput
+                                    id="description"
+                                    name="description"
+                                    placeholder="Awesome article about #javascript"
+                                    value={form.description}
+                                    onChange={handleForm}
+                                    disabled={loading}
+                                />
+                                {!loading
+                                    ? <Button onClick={submitForm}>Publish</Button>
+                                    : <Button disabled={loading}>Publishing</Button>
+                                }
+                            </Form>
+                        </PublishContainer>
+                        {!errorMessage
+                            ? <Posts />
+                            : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
                         }
-                    </Form>
-                </PublishContainer>
-                {!errorMessage
-                    ? <Posts />
-                    : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
-                }
-            </TimelineContainer>
-        </TimelineBackground>
+                </TimelineContainer>
+            </TimelineBackground>
+        </>
     );
 };
 
@@ -155,13 +201,14 @@ export const Timeline = () => {
 
 const TimelineBackground = styled.div`
     background-color: #333333;
+    display: flex;
+    justify-content: center;
 `;
 
 const TimelineContainer = styled.div`
     width: 616px;
-    margin-left: auto;
-    margin-right: auto;
-    padding-top: 78px;
+    margin-right: 50px;
+    padding-top: 70px;
 `;
 
 const Title = styled.h1`
@@ -251,6 +298,7 @@ const Button = styled.button`
     color: #ffffff;
     background-color: ${props => !props.disabled ? "#1877F2" : "#1154ab"};
     align-self: flex-end;
+    cursor: pointer;
 `;
 
 const PostsContainer = styled.div`
@@ -325,4 +373,10 @@ const LinkUrl = styled.p`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+`;
+
+const LikeIcon = styled.div`
+position: relative;
+right: 560px;
+top: 60px;
 `;
