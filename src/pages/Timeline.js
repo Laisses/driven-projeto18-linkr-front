@@ -17,11 +17,15 @@ export const Timeline = () => {
 
     const getPosts = async () => {
         try {
-            const res = await axios.get(`${BASE_URL}/imeline`, config);
+            const res = await axios.get(`${BASE_URL}/timeline`, config);
             setPosts(res.data);
         } catch (error) {
             setErrorMessage(true);
         }
+    };
+
+    const openNewTab = url => {
+        window.open(url, '_blank').focus();
     };
 
     const ListofPosts = post => {
@@ -37,7 +41,7 @@ export const Timeline = () => {
                     <Username>{user.name}</Username>
                     <Description>{description}</Description>
                     <LinkContainer>
-                        <LinkMetaData>
+                        <LinkMetaData onClick={() => openNewTab(link.address)}>
                             <LinkTitle>{link.title}</LinkTitle>
                             <LinkDescription>{link.hint}</LinkDescription>
                             <LinkUrl>{link.address}</LinkUrl>
