@@ -8,30 +8,33 @@ import Header from "../constants/header";
 import axios from "axios";
 
 export const Timeline = () => {
-    const { token, user, config } = useContext(MyContext);
-    const [posts, setPosts] = useState(undefined);
+    const { token, config } = useContext(MyContext);
+    const user = {id: 7, name:	"Maria", email:	"maria@email.com", password: "$2b$05$2Rf0/JtX8JmdbL3gQT25AetQKBzbwlm59zIyTz9lmUsTP/RQlYlqm", photo: "https://i.pinimg.com/originals/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg", createdAd: "2023-01-05 22:53:54.81717"}
+    const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
+    const [userPostsLiked, setUserPostsLiked] = useState([])
 
     // Alterar a URL
-    const getPostLikes = () => {
+    const getPostsLikes = () => {
         posts.forEach(post => {
-            const request = axios.get("http://localhost:5000/likes", {id: post.id});
+            const request = axios.get(`${BASE_URL}/likes`, {id: 2});
             request.then((res) => {
                 const newPostsLikes = [...postsLikes, res.data]
                 setPostsLikes(newPostsLikes);
-        });
-        request.catch((err) => {
-            alert("Algo deu errado e a culpa é nossa. =/");
-            console.log(err);
-        });
+            });
+            request.catch((err) => {
+                alert("Algo deu errado e a culpa é nossa. =/");
+                console.log(err);
+            });
         })
     }
 
+
     //ID de todos os posts curtidos por esse usuário
-    const userPostsLiked = [];
+    const getPostsIdLiked = () => {
     postsLikes.forEach(postLikes => {
         postLikes.forEach(postLike => {
             if (postLike.user_id === user.id) {
@@ -39,6 +42,7 @@ export const Timeline = () => {
             }
         })
     })
+}
     
     const getPosts = async () => {
         try {
@@ -55,11 +59,11 @@ export const Timeline = () => {
     
       useEffect(() => {
         getPosts();
-        getPostLikes();
+        getPostsLikes();
     }, [setErrorMessage]);    
 
     const likeHandler = (postId) => {
-        const request = axios.post("http://localhost:5000/likes", config, {id: postId});
+        const request = axios.post(`${BASE_URL}/likes`, config, {id: postId});
             request.then((res) => {
             
         });
@@ -70,7 +74,7 @@ export const Timeline = () => {
     }
 
     const ListofPosts = post => {
-        const {id, user_id, description, link, user} = post;
+        const {id, description, link, user} = post;
 
         return (
             <PostsContainer>
