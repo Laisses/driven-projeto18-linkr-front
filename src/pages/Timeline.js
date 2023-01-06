@@ -1,7 +1,10 @@
-import { useState } from "react";
 import styled from "styled-components";
+import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
+import { useContext, useEffect, useState } from "react";
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
+import axios from "axios";
+
 
 const mockposts = [
     {
@@ -35,21 +38,63 @@ const mockposts = [
 ];
 
 const mockuser = {
+    id: 1,
     name: "Juvenal Juvêncio",
     photo: "https://i.pinimg.com/736x/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg",
     token: "12344"
 };
 
 export const Timeline = () => {
-    //const [posts, setPosts] = useState(mockposts);
-    //const [user, setUser] = useState(mockuser);
+    // const { token, user, config } = useContext(MyContext);
+    const [posts, setPosts] = useState(mockposts);
+    const [user, setUser] = useState(mockuser);
+    const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
+    const config = {headers: {
+        authorization: `Bearer ${mockuser.token}`
+    }}
 
-    //const config = { headers: { Authorization: `Bearer ${mockuser.token}`}};
+    // Alterar a URL
+    const getPostLikes = () => {
+        posts.forEach(post => {
+            const request = axios.get("http://localhost:5000/likes", {id: post.id});
+            request.then((res) => {
+                const newPostsLikes = [...postsLikes, res.data]
+                setPostsLikes(newPostsLikes);
+        });
+        request.catch((err) => {
+            alert("Algo deu errado e a culpa é nossa. =/");
+            console.log(err);
+        });
+        })
+    }
+
+    //ID de todos os posts curtidos por esse usuário
+    const userPostsLiked = [];
+    postsLikes.forEach(postLikes => {
+        postLikes.forEach(postLike => {
+            if (postLike.user_id === user.id) {
+                userPostsLiked.push(postLike.post_id)
+            }
+        })
+    })
+
+    useEffect(getPostLikes, [])
+
+    const likeHandler = (postId) => {
+        const request = axios.post("http://localhost:5000/likes", config, {id: postId});
+            request.then((res) => {
+            
+        });
+        request.catch((err) => {
+            alert("Algo deu errado e a culpa é nossa. =/");
+            console.log(err);
+        });
+    }
 
     const ListofPosts = post => {
-        const {description, link, user} = post;
+        const {id, user_id, description, link, user} = post;
 
         return (
             <PostsContainer>
@@ -72,8 +117,10 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
+                <LikeIcon onClick={()=>likeHandler(id)}>
+                    {userPostsLiked.includes(id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                </LikeIcon>
             </PostsContainer>
-
         );
     };
 
@@ -318,4 +365,10 @@ const LinkUrl = styled.p`
     font-size: 11px;
     color: #CECECE;
     margin-top: 16px;
+`;
+
+const LikeIcon = styled.div`
+position: relative;
+right: 560px;
+top: 60px;
 `;
