@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import GlobalStyle from "./assets/styles/GlobalStyle";
 import { Timeline } from './pages/Timeline';
 import HashtagPage from './pages/hashtag';
-import { useState } from 'react';
 import SignIn from './components/SignIn.js'
 import SignUp from './components/SignUp.js'
 import UserContext from './contexts/userContext';
