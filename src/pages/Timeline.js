@@ -2,7 +2,7 @@ import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { useContext, useEffect, useState } from "react";
-import MyContext from '../components/MyContext';
+import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
