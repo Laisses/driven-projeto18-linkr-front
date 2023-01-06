@@ -13,6 +13,7 @@ export default function App() {
 
     return (
         <MyContext.Provider value={{token, setToken, user, setUser, config, counter, setCounter}}>
+
         <BrowserRouter>
             <GlobalStyle />
             <Routes>

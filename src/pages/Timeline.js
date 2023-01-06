@@ -1,59 +1,19 @@
+import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { useContext, useEffect, useState } from "react";
+import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
 
-
-const mockposts = [
-    {
-        id: 1,
-        description: "Muito maneiro esse tutorial de Material UI com React, deem uma olhada!",
-        link: {
-            title: "Como aplicar o Material UI em um projeto React",
-            hint: "Hey! I have moved this tutorial to my personal blog. Same content, new location. Sorry about making you click through to another page.",
-            image: "data:image/png;base64,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",
-            address: "https://medium.com/@pshrmn/a-simple-react-router"
-        },
-        user: {
-            name: "Doggy Dog",
-            photo: "https://i.pinimg.com/736x/87/da/5d/87da5dce0f38b58f6c836a6e03dd005b.jpg"
-        }
-    },
-    {
-        id: 2,
-        description: "Muito maneiro esse tutorial de Material UI com React, deem uma olhada!",
-        link: {
-            title: "Como aplicar o Material UI em um projeto React",
-            hint: "Hey! I have moved this tutorial to my personal blog. Same content, new location. Sorry about making you click through to another page.",
-            image: "data:image/png;base64,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",
-            address: "https://medium.com/@pshrmn/a-simple-react-router"
-        },
-        user: {
-            name: "Juvenal Juvêncio",
-            photo: "https://i.pinimg.com/736x/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg"
-        }
-    },
-];
-
-const mockuser = {
-    id: 1,
-    name: "Juvenal Juvêncio",
-    photo: "https://i.pinimg.com/736x/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg",
-    token: "12344"
-};
-
 export const Timeline = () => {
-    // const { token, user, config } = useContext(MyContext);
-    const [posts, setPosts] = useState(mockposts);
-    const [user, setUser] = useState(mockuser);
+    const { token, user, config } = useContext(MyContext);
+    const [posts, setPosts] = useState(undefined);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
-    const config = {headers: {
-        authorization: `Bearer ${mockuser.token}`
-    }}
+    const [errorMessage, setErrorMessage] = useState(false);    
 
     // Alterar a URL
     const getPostLikes = () => {
@@ -79,8 +39,24 @@ export const Timeline = () => {
             }
         })
     })
+    
+    const getPosts = async () => {
+        try {
+            const res = await axios.get(`${BASE_URL}/timeline`, config);
+            setPosts(res.data);
+        } catch (error) {
+            setErrorMessage(true);
+        }
+    };
 
-    useEffect(getPostLikes, [])
+    const openNewTab = url => {
+        window.open(url, '_blank').focus();
+    };
+    
+      useEffect(() => {
+        getPosts();
+        getPostLikes();
+    }, [setErrorMessage]);    
 
     const likeHandler = (postId) => {
         const request = axios.post("http://localhost:5000/likes", config, {id: postId});
@@ -99,14 +75,14 @@ export const Timeline = () => {
         return (
             <PostsContainer>
                 <ProfilePicture
-                    src={mockuser.photo}
+                    src={user.photo}
                     alt="profile picture"
                 />
                 <Post>
                     <Username>{user.name}</Username>
                     <Description>{description}</Description>
                     <LinkContainer>
-                        <LinkMetaData>
+                        <LinkMetaData onClick={() => openNewTab(link.address)}>
                             <LinkTitle>{link.title}</LinkTitle>
                             <LinkDescription>{link.hint}</LinkDescription>
                             <LinkUrl>{link.address}</LinkUrl>
@@ -125,14 +101,14 @@ export const Timeline = () => {
     };
 
     const Posts = () => {
-        if (!mockposts) {
-            return <div>Loading...</div>
-        } else if (mockposts.length === 0) {
-            return <div>You hanven't published anything yet</div>
-        } else if (mockposts) {
+        if (!posts) {
+            return <Message>Loading...</Message>
+        } else if (posts.length === 0) {
+            return <Message>There are no posts yet</Message>
+        } else if (posts) {
             return (
                 <ul>
-                    {mockposts.map(p => <ListofPosts
+                    {posts.map(p => <ListofPosts
                         key={p.id}
                         {...p}
                     />)}
@@ -152,7 +128,6 @@ export const Timeline = () => {
         return regex.test(url);
     };
 
-    //async quando usar axios
     const submitForm = async () => {
         setLoading(true);
 
@@ -163,47 +138,66 @@ export const Timeline = () => {
             return alert("You must choose a valid link!");
         }
 
-        //setLoading(false)
-        //setForm({description: "", link: ""})
+        try {
+            await axios.post(`${BASE_URL}/timeline`, form, config);
+            setLoading(false);
+            setForm({description: "", link: ""});
+            getPosts();
+        } catch (error) {
+            setLoading(false);
+            alert("Houve um erro ao publicar seu link");
+        }
+
     };
 
     return (
         <>
-            <Header/>
-
-            <TimelineBackground>
-                <TimelineContainer>
-                    <Title>timeline</Title>
-                    <PublishContainer>
-                        <ProfilePicture
-                            src={mockuser.photo}
-                            alt="profile picture"
-                        />
-                        <Form>
-                            <FormTitle>What are you going to share today?</FormTitle>
-                            <LinkInput
-                                type="text"
-                                id="link"
-                                name="link"
-                                placeholder="http://..."
-                                required
+             <Header/>
+             <TimelineBackground>
+                    <TimelineContainer>
+                        <Title>timeline</Title>
+                        <PublishContainer>
+                            <ProfilePicture
+                                src={user.photo}
+                                alt="profile picture"
+                            />
+                            <Form>
+                                <FormTitle>What are you going to share today?</FormTitle>
+                                <LinkInput
+                                    type="text"
+                                    id="link"
+                                    name="link"
+                                    placeholder="http://..."
+                                    value={form.link}
+                                    onChange={handleForm}
+                                    disabled={loading}
+                                    required
                                 />
-                            <TextInput
-                                id="description"
-                                name="description"
-                                placeholder="Awesome article about #javascript"
+                                <TextInput
+                                    id="description"
+                                    name="description"
+                                    placeholder="Awesome article about #javascript"
+                                    value={form.description}
+                                    onChange={handleForm}
+                                    disabled={loading}
                                 />
-                            <Button>Publish</Button>
-                        </Form>
-                    </PublishContainer>
-                    <Posts />
+                                {!loading
+                                    ? <Button onClick={submitForm}>Publish</Button>
+                                    : <Button disabled={loading}>Publishing</Button>
+                                }
+                            </Form>
+                        </PublishContainer>
+                        {!errorMessage
+                            ? <Posts />
+                            : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
+                        }
                 </TimelineContainer>
-
-                <TrendingList/>
             </TimelineBackground>
         </>
     );
 };
+
+
 
 const TimelineBackground = styled.div`
     background-color: #333333;
@@ -232,6 +226,12 @@ const PublishContainer = styled.div`
     border-radius: 16px;
     display: flex;
     margin-bottom: 30px;
+`;
+
+const Message = styled.p`
+    font-family: 'Lato', sans-serif;
+    font-size: 20px;
+    color: #ffffff;
 `;
 
 const ProfilePicture = styled.img`
@@ -353,18 +353,26 @@ const LinkImage = styled.img`
 const LinkTitle = styled.h4`
     font-size: 16px;
     color: #CECECE;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const LinkDescription = styled.p`
     font-size: 11px;
     color: #9B9595;
     margin-top: 10px;
+    max-height: 30px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 const LinkUrl = styled.p`
     font-size: 11px;
     color: #CECECE;
     margin-top: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `;
 
 const LikeIcon = styled.div`
