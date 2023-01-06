@@ -1,15 +1,17 @@
 import axios from "axios"
 import styled from "styled-components"
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { BASE_URL } from "../constants/url"
+import MyContext from "../contexts/MyContext"
 
 export default function TrendingList () {
     const [list, setList] = useState([])
+    const { config, setCounter, counter } = useContext(MyContext)
     
     async function getTrending () {
         try {
-            const res = await axios.get(`${BASE_URL}/hashtag`, {token: 'token meramente ilustrativo'});
+            const res = await axios.get(`${BASE_URL}/hashtag`, config);
             setList(res.data)
         } catch (err) {
             console.log(err)
@@ -18,7 +20,7 @@ export default function TrendingList () {
 
     useEffect(() => {
         getTrending()
-    }, [])
+    }, [counter])
 
     return (
         <Container>
@@ -26,7 +28,7 @@ export default function TrendingList () {
 
             <ul>
                 {list.map((t, idx) => 
-                    <Link to={`/hashtag/${t.name}`} key={idx.toString()}>
+                    <Link onClick={() => setCounter(counter + 1)} to={`/hashtag/${t.name}`} key={idx.toString()}>
                         <li> # {t.name}</li>
                     </Link>)}
             </ul>
