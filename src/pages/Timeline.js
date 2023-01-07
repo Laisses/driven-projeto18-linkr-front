@@ -9,10 +9,11 @@ import Header from "../constants/header";
 import axios from "axios";
 
 export const Timeline = () => {
-    const { user, config } = useContext(MyContext);
+    const { token, user, config } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
-    const [postsLikes, setPostsLikes] = useState([]);
-    const [form, setForm] = useState({ description: "", link: "" });
+    const [postsLikes, setPostsLikes] = useState([])    
+    const [form, setForm] = useState({description: "", link: ""});
+
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);
 
@@ -247,7 +248,8 @@ export const Timeline = () => {
                     }
                 </TimelineContainer>
 
-                {<TrendingList />}
+                <TrendingList/>
+
             </TimelineBackground>
         </>
     );
