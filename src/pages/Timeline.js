@@ -70,11 +70,12 @@ export const Timeline = () => {
         });
     }
 
-    const submitNewDesc = async (id, text, onErrorFn) => {        
+    const submitNewDesc = async (id, text, onErrorFn) => {
         try {
             await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
+            getPosts();
         } catch (err) {
-            alert("sorry!")
+            alert("Sorry! Something went wrong, please try again later!")
             onErrorFn();
         }
     };
