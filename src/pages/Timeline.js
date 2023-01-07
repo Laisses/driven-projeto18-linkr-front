@@ -9,7 +9,7 @@ import axios from "axios";
 
 export const Timeline = () => {
     const { token, user, config } = useContext(MyContext);
-    const [posts, setPosts] = useState(undefined);
+    const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
@@ -192,6 +192,8 @@ export const Timeline = () => {
                             : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
                         }
                 </TimelineContainer>
+
+                <TrendingList/>
             </TimelineBackground>
         </>
     );
