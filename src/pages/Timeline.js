@@ -10,10 +10,9 @@ import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
 
 export const Timeline = () => {
-    const { token, config } = useContext(MyContext);
-    const user = {id: 7, name:	"Maria", email:	"maria@email.com", password: "$2b$05$2Rf0/JtX8JmdbL3gQT25AetQKBzbwlm59zIyTz9lmUsTP/RQlYlqm", photo: "https://i.pinimg.com/originals/aa/02/78/aa02780bbc7e6c5e2d52d9b0e919fbf6.jpg", createdAd: "2023-01-05 22:53:54.81717"}
+    const { token, user, config } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
-    const [postsLikes, setPostsLikes] = useState({})    
+    const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
@@ -193,6 +192,8 @@ export const Timeline = () => {
                             : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
                         }
                 </TimelineContainer>
+
+                <TrendingList/>
             </TimelineBackground>
         </>
     );
