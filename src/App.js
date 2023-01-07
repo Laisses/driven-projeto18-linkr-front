@@ -2,21 +2,22 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import GlobalStyle from "./assets/styles/GlobalStyle";
 import { Timeline } from './pages/Timeline';
 import HashtagPage from './pages/hashtag';
-import SignIn from './components/SignIn.js'
-import SignUp from './components/SignUp.js'
+import SignIn from './pages/SignIn.js'
+import SignUp from './pages/SignUp.js'
 import UserContext from './contexts/userContext';
 import MyContext from './contexts/MyContext';
 import { useState } from 'react';
 
 export default function App() {
-    const [data, setData] = useState('')
-    const [counter, setCounter] = useState(0)
-    const [token, setToken] = useState("");
+    const [data, setData] = useState('');
+    const [counter, setCounter] = useState(0);
     const [user, setUser] = useState("");
-    const config = { headers: { Authorization: `Bearer d0a796bd-aed5-413b-babe-00a21d083c4b`}};
+
+    const token = localStorage.getItem("token");
+    const config = { headers: { Authorization: `Bearer ${token}`}};
 
     return (
-        <MyContext.Provider value={{token, setToken, user, setUser, config, counter, setCounter}}>
+        <MyContext.Provider value={{token, user, setUser, config, counter, setCounter}}>
 
         <BrowserRouter>
             <GlobalStyle />

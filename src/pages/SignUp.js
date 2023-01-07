@@ -2,6 +2,7 @@ import { Link } from "react-router-dom"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import styled from "styled-components"
+import { BASE_URL } from "../constants/url"
 
 export default function SignUp() {
 
@@ -10,14 +11,13 @@ export default function SignUp() {
         email: "",
         password: "",
         username: "",
-        profilePicture: ""
+        pictureUrl: ""
     }
 
     function sign_up(e) {
         e.preventDefault()
 
-
-        const promise = axios.post("https://linkr-api-cmhm.onrender.com/sign-up", body)
+        const promise = axios.post(`${BASE_URL}/signup`, body)
         promise.then(res => {
 
             console.log(res.data);
@@ -31,7 +31,6 @@ export default function SignUp() {
     }
 
     return (
-
         <ContainerSignup>
             <ContainerLeft>
                 <p>linkr</p>
@@ -43,7 +42,7 @@ export default function SignUp() {
                         <input placeholder="e-mail" type="email" onChange={e => body.email = e.target.value} required></input>
                         <input placeholder="password" type="password" onChange={e => body.password = e.target.value} required></input>
                         <input placeholder="username" type="text" onChange={e => body.username = e.target.value} required></input>
-                        <input placeholder="picture url" type="text" onChange={e => body.profilePicture = e.target.value} required></input>
+                        <input placeholder="picture url" type="text" onChange={e => body.pictureUrl = e.target.value} required></input>
                         <button type="submit" >Sign Up</button>
                     </form>
                 </ContainerInput>
@@ -65,7 +64,6 @@ const ContainerSignup = styled.div`
 	justify-content: space-between;
 	background-color: #151515;
 `
-
 const ContainerLeft = styled.div`
     background-color:  black;
     width: 70%;
@@ -93,7 +91,6 @@ const ContainerLeft = styled.div`
         padding-left: 50px;
     }
 `
-
 const ContainerRight = styled.div`
     width: 30%;
     height: 100%;
@@ -102,7 +99,6 @@ const ContainerRight = styled.div`
     align-items: center;
     padding-top: 150px;
 `
-
 const ContainerInput = styled.div`
 
     form{
