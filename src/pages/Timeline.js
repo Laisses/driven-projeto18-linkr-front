@@ -96,11 +96,12 @@ export const Timeline = () => {
                     <PostHeader>
                         <Username>{user.name}</Username>
                         {
-                            user.id === user_id
+                            user.id !== user_id
                                 ?
                                 <div>
                                     <EditIcon onClick={() => {
                                         setEdit(!edit);
+                                        setText(description);
                                     }}>
                                         <TiPencil size={"20px"} />
                                     </EditIcon>
@@ -128,6 +129,7 @@ export const Timeline = () => {
                                         submitNewDesc(id, text, () => setEditing(false));
                                     } else if (e.key === "Escape") {
                                         setEdit(false);
+                                        setText(description);
                                     }
                                 }}
                             />
