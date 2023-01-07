@@ -2,10 +2,14 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import GlobalStyle from "./assets/styles/GlobalStyle";
 import { Timeline } from './pages/Timeline';
 import HashtagPage from './pages/hashtag';
+import SignIn from './components/SignIn.js'
+import SignUp from './components/SignUp.js'
+import UserContext from './contexts/userContext';
 import MyContext from './contexts/MyContext';
 import { useState } from 'react';
 
 export default function App() {
+    const [data, setData] = useState('')
     const [counter, setCounter] = useState(0)
     const [token, setToken] = useState("");
     const [user, setUser] = useState("");
@@ -16,11 +20,14 @@ export default function App() {
 
         <BrowserRouter>
             <GlobalStyle />
-            <Routes>
-                <Route path="/" element={"olá"} />
-                <Route path="/timeline" element={<Timeline />} />
-                <Route path="/hashtag/:hashtag" element={<HashtagPage/>}/>
+            <UserContext.Provider value={{ data, setData }}>
+                <Routes>
+                    <Route path="/" element={<SignIn />} />
+                    <Route path="/sign-up" element={<SignUp />} />
+                    <Route path="/timeline" element={<Timeline />} />
+                    <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
                 </Routes>
+            </UserContext.Provider>
         </BrowserRouter>
         </MyContext.Provider>
     );
