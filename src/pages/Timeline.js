@@ -15,8 +15,6 @@ export const Timeline = () => {
     const [form, setForm] = useState({ description: "", link: "" });
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);
-    console.log(user)
-
 
     // Alterar a URL
     const getPostLikes = () => {
@@ -72,9 +70,9 @@ export const Timeline = () => {
         });
     }
 
-    const submitNewDesc = async (id, text, onErrorFn) => {
+    const submitNewDesc = async (id, text, onErrorFn) => {        
         try {
-            await axios.put(`${BASE_URL}/timeline`, {id, text}, config);
+            await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
         } catch (err) {
             alert("sorry!")
             onErrorFn();
