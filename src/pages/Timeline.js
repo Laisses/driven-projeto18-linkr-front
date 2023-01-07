@@ -1,6 +1,7 @@
 import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
+import { TiPencil } from "react-icons/ti";
 import { useContext, useEffect, useState } from "react";
 import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
@@ -8,25 +9,27 @@ import Header from "../constants/header";
 import axios from "axios";
 
 export const Timeline = () => {
-    const { token, user, config } = useContext(MyContext);
+    const { user, config } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
-    const [postsLikes, setPostsLikes] = useState([])    
-    const [form, setForm] = useState({description: "", link: ""});
+    const [postsLikes, setPostsLikes] = useState([]);
+    const [form, setForm] = useState({ description: "", link: "" });
     const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(false);    
+    const [errorMessage, setErrorMessage] = useState(false);
+    console.log(user)
+
 
     // Alterar a URL
     const getPostLikes = () => {
         posts.forEach(post => {
-            const request = axios.get("http://localhost:5000/likes", {id: post.id});
+            const request = axios.get("http://localhost:5000/likes", { id: post.id });
             request.then((res) => {
                 const newPostsLikes = [...postsLikes, res.data]
                 setPostsLikes(newPostsLikes);
-        });
-        request.catch((err) => {
-            alert("Algo deu errado e a culpa é nossa. =/");
-            console.log(err);
-        });
+            });
+            request.catch((err) => {
+                alert("Algo deu errado e a culpa é nossa. =/");
+                console.log(err);
+            });
         })
     }
 
@@ -39,7 +42,7 @@ export const Timeline = () => {
             }
         })
     })
-    
+
     const getPosts = async () => {
         try {
             const res = await axios.get(`${BASE_URL}/timeline`, config);
@@ -52,16 +55,16 @@ export const Timeline = () => {
     const openNewTab = url => {
         window.open(url, '_blank').focus();
     };
-    
-      useEffect(() => {
+
+    useEffect(() => {
         getPosts();
-        getPostLikes();
-    }, [setErrorMessage]);    
+        //getPostLikes();
+    }, [setErrorMessage]);
 
     const likeHandler = (postId) => {
-        const request = axios.post("http://localhost:5000/likes", config, {id: postId});
-            request.then((res) => {
-            
+        const request = axios.post("http://localhost:5000/likes", config, { id: postId });
+        request.then((res) => {
+
         });
         request.catch((err) => {
             alert("Algo deu errado e a culpa é nossa. =/");
@@ -69,8 +72,20 @@ export const Timeline = () => {
         });
     }
 
+    const submitNewDesc = async (id, text, onErrorFn) => {
+        try {
+            await axios.put(`${BASE_URL}/timeline`, {id, text}, config);
+        } catch (err) {
+            alert("sorry!")
+            onErrorFn();
+        }
+    };
+
     const ListofPosts = post => {
-        const {id, user_id, description, link, user} = post;
+        const { id, user_id, description, link, user } = post;
+        const [editing, setEditing] = useState(false);
+        const [edit, setEdit] = useState(false);
+        const [text, setText] = useState(description);
 
         return (
             <PostsContainer>
@@ -79,8 +94,46 @@ export const Timeline = () => {
                     alt="profile picture"
                 />
                 <Post>
-                    <Username>{user.name}</Username>
-                    <Description>{description}</Description>
+                    <PostHeader>
+                        <Username>{user.name}</Username>
+                        {
+                            user.id === user_id
+                                ?
+                                <div>
+                                    <EditIcon onClick={() => {
+                                        setEdit(!edit);
+                                    }}>
+                                        <TiPencil size={"20px"} />
+                                    </EditIcon>
+                                </div>
+                                :
+                                <></>
+                        }
+
+                    </PostHeader>
+                    {
+                        !edit
+                            ?
+                            <Description>{description}</Description>
+                            :
+                            <EditInput
+                                id="edit"
+                                name="edit"
+                                value={text}
+                                onChange={e => setText(e.target.value)}
+                                disabled={editing}
+                                autoFocus={true}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        setEditing(true);
+                                        submitNewDesc(id, text, () => setEditing(false));
+                                    } else if (e.key === "Escape") {
+                                        setEdit(false);
+                                    }
+                                }}
+                            />
+                    }
+
                     <LinkContainer>
                         <LinkMetaData onClick={() => openNewTab(link.address)}>
                             <LinkTitle>{link.title}</LinkTitle>
@@ -93,7 +146,7 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon onClick={()=>likeHandler(id)}>
+                <LikeIcon onClick={() => likeHandler(id)}>
                     {userPostsLiked.includes(id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
             </PostsContainer>
@@ -118,8 +171,8 @@ export const Timeline = () => {
     };
 
     const handleForm = e => {
-        const {name, value} = e.target;
-        setForm({...form, [name]: value});
+        const { name, value } = e.target;
+        setForm({ ...form, [name]: value });
     };
 
     const validateURL = url => {
@@ -141,7 +194,7 @@ export const Timeline = () => {
         try {
             await axios.post(`${BASE_URL}/timeline`, form, config);
             setLoading(false);
-            setForm({description: "", link: ""});
+            setForm({ description: "", link: "" });
             getPosts();
         } catch (error) {
             setLoading(false);
@@ -152,48 +205,48 @@ export const Timeline = () => {
 
     return (
         <>
-             <Header/>
-             <TimelineBackground>
-                    <TimelineContainer>
-                        <Title>timeline</Title>
-                        <PublishContainer>
-                            <ProfilePicture
-                                src={user.photo}
-                                alt="profile picture"
+            <Header />
+            <TimelineBackground>
+                <TimelineContainer>
+                    <Title>timeline</Title>
+                    <PublishContainer>
+                        <ProfilePicture
+                            src={user.photo}
+                            alt="profile picture"
+                        />
+                        <Form>
+                            <FormTitle>What are you going to share today?</FormTitle>
+                            <LinkInput
+                                type="text"
+                                id="link"
+                                name="link"
+                                placeholder="http://..."
+                                value={form.link}
+                                onChange={handleForm}
+                                disabled={loading}
+                                required
                             />
-                            <Form>
-                                <FormTitle>What are you going to share today?</FormTitle>
-                                <LinkInput
-                                    type="text"
-                                    id="link"
-                                    name="link"
-                                    placeholder="http://..."
-                                    value={form.link}
-                                    onChange={handleForm}
-                                    disabled={loading}
-                                    required
-                                />
-                                <TextInput
-                                    id="description"
-                                    name="description"
-                                    placeholder="Awesome article about #javascript"
-                                    value={form.description}
-                                    onChange={handleForm}
-                                    disabled={loading}
-                                />
-                                {!loading
-                                    ? <Button onClick={submitForm}>Publish</Button>
-                                    : <Button disabled={loading}>Publishing</Button>
-                                }
-                            </Form>
-                        </PublishContainer>
-                        {!errorMessage
-                            ? <Posts />
-                            : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
-                        }
+                            <TextInput
+                                id="description"
+                                name="description"
+                                placeholder="Awesome article about #javascript"
+                                value={form.description}
+                                onChange={handleForm}
+                                disabled={loading}
+                            />
+                            {!loading
+                                ? <Button onClick={submitForm}>Publish</Button>
+                                : <Button disabled={loading}>Publishing</Button>
+                            }
+                        </Form>
+                    </PublishContainer>
+                    {!errorMessage
+                        ? <Posts />
+                        : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
+                    }
                 </TimelineContainer>
 
-                <TrendingList/>
+                {<TrendingList />}
             </TimelineBackground>
         </>
     );
@@ -291,6 +344,23 @@ const TextInput = styled.textarea`
     }
 `;
 
+const EditInput = styled.textarea`
+    font-family: 'Lato', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    width: 503px;
+    border-radius: 3px;
+    background-color: #EFEFEF;
+    border: none;
+    margin-top: 5px;
+    padding-top: 5px;
+    padding-left: 10px;
+    resize: none;
+    &:focus {
+        outline: none;
+    }
+`;
+
 const Button = styled.button`
     width: 112px;
     height: 31px;
@@ -320,9 +390,19 @@ const Post = styled.li`
     padding-left: 18px;
 `;
 
-const Username = styled.h3`
+const PostHeader = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 30px;
+`;
+
+const Username = styled.div`
     font-size: 19px;
-    padding-top: 6px;
+`;
+
+const EditIcon = styled.div`
+    width: 24px;
 `;
 
 const Description = styled.div`
