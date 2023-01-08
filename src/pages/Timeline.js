@@ -49,6 +49,7 @@ export const Timeline = () => {
         try {
             await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
             setIsModalOpen(false);
+            setModalPostId(null)
             getPosts();
         } catch (error) {
             setErrorMessage(true);
