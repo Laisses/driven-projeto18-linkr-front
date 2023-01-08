@@ -1,7 +1,7 @@
 import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
-import { TiPencil } from "react-icons/ti";
+import { TiDelete, TiPencil, TiTrash } from "react-icons/ti";
 import { useContext, useEffect, useState } from "react";
 import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
@@ -36,6 +36,15 @@ export const Timeline = () => {
             })
         })
         Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
+    }
+
+    const deletePostHandler = async (post) => {
+        try {
+            await axios.delete(`${BASE_URL}/timeline`, {id: post.id}, config);
+            getPosts();
+        } catch (error) {
+            setErrorMessage(true);
+        }
     }
     
     const getPosts = async () => {
@@ -90,7 +99,7 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, user_id, description, link, user: u } = post;
+        const { id, description, link, user: u } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
@@ -112,8 +121,9 @@ export const Timeline = () => {
                     <PostHeader>
                         <Username>{u.name}</Username>
                         {
-                            data.user.id !== user_id
+                            data.user.id === u.id
                                 ?
+                                <HeaderIcons>
                                 <div>
                                     <EditIcon onClick={() => {
                                         setEdit(!edit);
@@ -122,6 +132,14 @@ export const Timeline = () => {
                                         <TiPencil size={"20px"} />
                                     </EditIcon>
                                 </div>
+                                <div>
+                                    <DeleteIcon onClick={() => {
+                                        deletePostHandler(post)
+                                    }}>
+                                        <TiTrash size={"20px"} />
+                                    </DeleteIcon>
+                                </div>
+                                </HeaderIcons>
                                 :
                                 <></>
                         }
@@ -434,7 +452,15 @@ const Username = styled.div`
     font-size: 19px;
 `;
 
+const HeaderIcons = styled.div`
+    display: flex;
+`
+
 const EditIcon = styled.div`
+    width: 24px;
+`;
+
+const DeleteIcon = styled.div`
     width: 24px;
 `;
 
