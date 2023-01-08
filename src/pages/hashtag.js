@@ -7,6 +7,7 @@ import TrendingList from "../components/trending";
 import { useContext, useEffect, useState } from "react";
 import MyContext from "../contexts/MyContext";
 import { ReactTagify } from "react-tagify"
+import { Oval } from 'react-loader-spinner'
 
 export default function HashtagPage () {
     const { hashtag } = useParams()
@@ -43,31 +44,41 @@ export default function HashtagPage () {
                     <h1># {hashtag}</h1>
 
                     <ul>
-                        {feed.map((t, idx) => 
-                            <li key={idx}>
-                                <div>
-                                    <img src={t.photo} alt="user"/>
-                                    {t.likes}
-                                </div>
+                        {
+                            feed.length === 0
+                                ?
+                            <LoadingDiv>
+                                <Oval 
+                                    color="white"
+                                    secondaryColor="gray"
+                                />
+                            </LoadingDiv>
+                                :
+                            feed.map((t, idx) => 
+                                <li key={idx}>
+                                    <div>
+                                        <img src={t.photo} alt="user"/>
+                                        {t.likes}
+                                    </div>
 
-                                <span>
-                                    {'t.name'}
-                                    <ReactTagify
-                                        tagStyle={tagStyle}
-                                        tagClicked={(tag) => {
-                                            setCounter(counter + 1)
-                                            navigate(`/hashtag/${tag.replace('#', '')}`)
-                                        }}
-                                    >
-                                        <p>
-                                            {'t.description Olá meu nome é esdrinhas e tenho uma #react #javascript'}
-                                        </p>
-                                    </ReactTagify>
+                                    <span>
+                                        {'t.name'}
+                                        <ReactTagify
+                                            tagStyle={tagStyle}
+                                            tagClicked={(tag) => {
+                                                setCounter(counter + 1)
+                                                navigate(`/hashtag/${tag.replace('#', '')}`)
+                                            }}
+                                        >
+                                            <p>
+                                                {t.description}
+                                            </p>
+                                        </ReactTagify>
 
-                                    {'t.link'}
-                                </span>
-                            </li>
-                        )}
+                                        {t.link}
+                                    </span>
+                                </li>
+                            )}
                     </ul>
                 </LeftPart>
 
@@ -83,6 +94,14 @@ const Container = styled.div`
     display: flex;
     justify-content: center;
 `
+const LoadingDiv = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 611px;
+    height: 276px;
+`
+
 //"LeftPart" é o componente dos post, só fiz isso pra ver como fica
 const LeftPart = styled.div`
     display: flex;
