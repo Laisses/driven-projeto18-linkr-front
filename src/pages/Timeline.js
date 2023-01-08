@@ -20,21 +20,6 @@ export const Timeline = () => {
     const [errorMessage, setErrorMessage] = useState(false);    
     
     const getPostsLikes = () => {
-        const newPostsLikes = {}
-        const promisses = []
-        posts.forEach( (post) => {
-                const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
-                promisses.push(request)
-                request.then((res)=>{
-                    newPostsLikes[post.id] = res.data.map(user => user.id)
-                }).catch(error => {
-                    alert("Algo deu errado e a culpa é nossa. =/");
-                console.log(error);
-                })
-    const [errorMessage, setErrorMessage] = useState(false);
-
-    // Alterar a URL
-    const getPostLikes = () => {
         posts.forEach(post => {
             const request = axios.get("http://localhost:5000/likes", { id: post.id });
             request.then((res) => {
@@ -215,7 +200,6 @@ export const Timeline = () => {
             setLoading(false);
             alert("Houve um erro ao publicar seu link");
         }
-
     };
 
     return (
@@ -260,9 +244,7 @@ export const Timeline = () => {
                         : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
                     }
                 </TimelineContainer>
-
                 <TrendingList/>
-
             </TimelineBackground>
         </>
     );
