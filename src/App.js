@@ -4,7 +4,6 @@ import { Timeline } from './pages/Timeline';
 import HashtagPage from './pages/hashtag';
 import SignIn from './pages/SignIn.js'
 import SignUp from './pages/SignUp.js'
-import UserContext from './contexts/userContext';
 import MyContext from './contexts/MyContext';
 import { useState } from 'react';
 
