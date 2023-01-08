@@ -13,7 +13,7 @@ import { ReactTagify } from "react-tagify"
 import { useNavigate } from "react-router-dom";
 
 export const Timeline = () => {
-    const { token, user, config, counter, setCounter } = useContext(MyContext);
+    const { config, counter, setCounter, data } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
@@ -21,7 +21,7 @@ export const Timeline = () => {
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
     const navigate = useNavigate()    
-    
+
     const getPostsLikes = () => {
         const newPostsLikes = {}
         const promisses = []
@@ -29,7 +29,7 @@ export const Timeline = () => {
             const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
             promisses.push(request)
             request.then((res)=>{
-                newPostsLikes[post.id] = res.data.map(user => user.id)
+                newPostsLikes[post.id] = res.data.map(user => data.user.id)
             }).catch(error => {
                     alert("Algo deu errado e a culpa é nossa. =/");
                 console.log(error);
@@ -110,9 +110,9 @@ export const Timeline = () => {
                 />
                 <Post>
                     <PostHeader>
-                        <Username>{user.name}</Username>
+                        <Username>{u.name}</Username>
                         {
-                            user.id !== user_id
+                            data.user.id !== user_id
                                 ?
                                 <div>
                                     <EditIcon onClick={() => {
@@ -171,7 +171,7 @@ export const Timeline = () => {
                     </LinkContainer>
                 </Post>
                 <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
-                    {postsLikes[id]?.includes(user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                    {postsLikes[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
                 <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
             </PostsContainer>
@@ -245,7 +245,7 @@ export const Timeline = () => {
                     <Title>timeline</Title>
                     <PublishContainer>
                         <ProfilePicture
-                            src={user.photo}
+                            src={data.user.photo}
                             alt="profile picture"
                         />
                         <Form>
