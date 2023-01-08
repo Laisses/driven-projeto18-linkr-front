@@ -16,12 +16,12 @@ export const Timeline = () => {
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
-
+    
     const getPostsLikes = () => {
         const newPostsLikes = {}
         const promisses = []
         posts.forEach( (post) => {
-                const request = axios.get(`http://localhost:5000/likes?post_id=${post.id}`, config);
+                const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
                 promisses.push(request)
                 request.then((res)=>{
                     newPostsLikes[post.id] = res.data.map(user => user.id)
@@ -32,7 +32,6 @@ export const Timeline = () => {
         })
         Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
     }
-
     
     const getPosts = async () => {
         try {
@@ -56,10 +55,10 @@ export const Timeline = () => {
     }, [posts]); 
 
     const likeHandler = (postId) => {
-        const request = axios.post(`${BASE_URL}/likes`, config, {id: postId});
+        const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
             request.then((res) => {
-            
-        });
+                getPostsLikes();
+            });
         request.catch((err) => {
             alert("Algo deu errado e a culpa é nossa. =/");
             console.log(err);
@@ -68,7 +67,6 @@ export const Timeline = () => {
 
     const ListofPosts = post => {
         const {id, description, link, user: u} = post;
-
         return (
             <PostsContainer>
                 <ProfilePicture
