@@ -20,7 +20,7 @@ export const Timeline = () => {
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
     const [isModalOpen, setIsModalOpen] = useState(false);
-
+    const [modalPostId, setModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
     const navigate = useNavigate()
@@ -48,6 +48,7 @@ export const Timeline = () => {
     const deletePostHandler = async (postId) => {
         try {
             await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
+            setIsModalOpen(false);
             getPosts();
         } catch (error) {
             setErrorMessage(true);
@@ -141,7 +142,7 @@ export const Timeline = () => {
                                 </div>
                                 <div>
                                     <DeleteIcon onClick={() => {
-                                        openModal()
+                                        openModal(id)
                                     }}>
                                         <TiTrash size={"20px"} />
                                     </DeleteIcon>
@@ -263,8 +264,9 @@ export const Timeline = () => {
         }
     };
 
-    const openModal = () => {
+    const openModal = (id) => {
         setIsModalOpen(true)
+        setModalPostId(id)
     }
 
     const closeModal = () => {
@@ -307,7 +309,7 @@ export const Timeline = () => {
                         <ModalText>Are you sure you want to delete this post?</ModalText>
                         <ModalButtons>
                         <ModalButtonCancel onClick={closeModal}>Cancelar</ModalButtonCancel>
-                        <ModalButtonConrfirm onClick={() => deletePostHandler()}>Confirmar</ModalButtonConrfirm>
+                        <ModalButtonConrfirm onClick={() => deletePostHandler(modalPostId)}>Confirmar</ModalButtonConrfirm>
                         </ModalButtons>
                     </ModalContainer>
             </ReactModal>
