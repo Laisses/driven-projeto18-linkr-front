@@ -5,9 +5,9 @@ import axios from "axios";
 import { useContext } from "react";
 import UserContext from "../contexts/userContext";
 import styled from "styled-components"
+import { BASE_URL } from "../constants/url";
 
 export default function SignIn() {
-
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
@@ -25,11 +25,9 @@ export default function SignIn() {
             alert("É necessários preencher todos os campos!")
         }
 
-        const promise = axios.post("https://linkr-api-cmhm.onrender.com/", body)
+        const promise = axios.post(`${BASE_URL}/signin`, body)
         promise.then(res => {
-
-            console.log(res.data);
-            window.localStorage.setItem("index", JSON.stringify(res.data))
+            window.localStorage.setItem("token", res.data.token)
             setData(res.data)
             navigate("/timeline")
         })
@@ -39,7 +37,6 @@ export default function SignIn() {
             alert("Usuário ou senha inválidos")
         })
     }
-
 
     return (
         <ContainerSignin>
@@ -72,7 +69,6 @@ const ContainerSignin = styled.div`
 	justify-content: space-between;
 	background-color: #151515;
 `
-
 const ContainerLeft = styled.div`
     background-color:  black;
     width: 70%;
@@ -100,7 +96,6 @@ const ContainerLeft = styled.div`
         padding-left: 50px;
     }
 `
-
 const ContainerRight = styled.div`
     width: 30%;
     height: 100%;
@@ -109,7 +104,6 @@ const ContainerRight = styled.div`
     align-items: center;
     padding-top: 150px;
 `
-
 const ContainerInput = styled.div`
 
     form{
