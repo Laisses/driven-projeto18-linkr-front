@@ -17,18 +17,16 @@ export default function App() {
     const config = { headers: { Authorization: `Bearer ${token}`}};
 
     return (
-        <MyContext.Provider value={{token, user, setUser, config, counter, setCounter}}>
+        <MyContext.Provider value={{token, user, setUser, config, counter, setCounter, data, setData}}>
 
         <BrowserRouter>
             <GlobalStyle />
-            <UserContext.Provider value={{ data, setData }}>
                 <Routes>
                     <Route path="/" element={<SignIn />} />
                     <Route path="/sign-up" element={<SignUp />} />
                     <Route path="/timeline" element={<Timeline />} />
                     <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
                 </Routes>
-            </UserContext.Provider>
         </BrowserRouter>
         </MyContext.Provider>
     );
