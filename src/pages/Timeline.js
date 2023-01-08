@@ -18,18 +18,20 @@ export const Timeline = () => {
 
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
+
     
     const getPostsLikes = () => {
-        posts.forEach(post => {
-            const request = axios.get("http://localhost:5000/likes", { id: post.id });
-            request.then((res) => {
-                const newPostsLikes = [...postsLikes, res.data]
-                setPostsLikes(newPostsLikes);
-            });
-            request.catch((err) => {
-                alert("Algo deu errado e a culpa é nossa. =/");
-                console.log(err);
-            });
+        const newPostsLikes = {}
+        const promisses = []
+        posts.forEach( (post) => {
+            const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
+            promisses.push(request)
+            request.then((res)=>{
+                newPostsLikes[post.id] = res.data.map(user => user.id)
+            }).catch(error => {
+                    alert("Algo deu errado e a culpa é nossa. =/");
+                console.log(error);
+            })
         })
         Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
     }
@@ -77,7 +79,7 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, user_id, description, link, user } = post;
+        const { id, user_id, description, link, user: u } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
