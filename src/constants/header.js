@@ -67,14 +67,14 @@ export default function Header () {
             
             <LogoutCase>
                 {rotate ? <MdKeyboardArrowUp onClick={turnArrow}/> : <MdKeyboardArrowDown onClick={turnArrow}/>}
+                
                 <img onClick={turnArrow} src={'https://i.pinimg.com/564x/28/6d/3a/286d3a9ba31ca7825c6ac858e01e6771--cute-baby-animals-animal-babies.jpg'} alt="user"/>
+
                 <LogoutDiv rotate={rotate.toString()}> 
                     <Link onClick={() => {localStorage.removeItem("token")}} to={"/"}>Logout</Link>
                 </LogoutDiv>
-                {/* 
-                    Solução improvisada para o segundo requisito do card do trello (discutir com o grupo depois)
-                    <LogoutBackground rotate={rotate.toString()} onClick={turnArrow}/> 
-                */}
+
+                <LogoutBackground rotate={rotate.toString()} onClick={turnArrow}/> 
             </LogoutCase>
         </Container>
     )
@@ -147,15 +147,15 @@ const LogoutDiv = styled.div`
         color: #FFFFFF;
     }
 `
-// const LogoutBackground = styled.div`
-//     z-index: 1;
-//     position: absolute;
-//     display: ${props => props.rotate === 'false' ? 'none' : 'flex'};
-//     left: 0;
-//     top: 0;
-//     width: 99.20vw;
-//     height: 100vh;
-// `
+const LogoutBackground = styled.div`
+    z-index: 1;
+    position: absolute;
+    display: ${props => props.rotate === 'false' ? 'none' : 'flex'};
+    left: 0;
+    top: 0;
+    width: 99.20vw;
+    height: 100vh;
+`
 const InputContainer = styled.div`
     position: absolute;
     z-index: 1;
