@@ -74,9 +74,9 @@ export const Timeline = () => {
         });
     }
 
-    const addHashtag = async (name) => {
+    const addHashtag = async (name, post_id) => {
         try {
-            await axios.post(`${BASE_URL}/hashtag`, { name }, config);
+            await axios.post(`${BASE_URL}/hashtag`, { name, post_id }, config);
             setCounter(counter + 1)
         } catch (err) {
             console.log(err);
@@ -221,13 +221,13 @@ export const Timeline = () => {
         }
 
         try {
+            const res = await axios.post(`${BASE_URL}/timeline`, form, config);
+
             descriptionWords.map((w) => {
                 if (w.includes("#")) {
-                    addHashtag(w.replace("#", ""))
+                    addHashtag(w.replace("#", ""), res.data.post_id)
                 }
             })
-
-            await axios.post(`${BASE_URL}/timeline`, form, config);
 
             setLoading(false);
             setForm({ description: "", link: "" });
