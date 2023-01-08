@@ -8,11 +8,12 @@ import { BASE_URL } from "../constants/url";
 import MyContext from "../contexts/MyContext";
 
 export default function SignIn() {
+    const { token } = useContext(MyContext)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
-    const { setData } = useContext(MyContext)
 
+    console.log(token)
 
     function sign_in(e) {
         e.preventDefault()
@@ -27,8 +28,11 @@ export default function SignIn() {
 
         const promise = axios.post(`${BASE_URL}/signin`, body)
         promise.then(res => {
-            window.localStorage.setItem("token", res.data.token)
-            setData(res.data)
+            localStorage.setItem("token", res.data.token)
+
+            const dataObj = JSON.stringify(res.data)
+            localStorage.setItem("data", dataObj)
+
             navigate("/timeline")
         })
         promise.catch(err => {

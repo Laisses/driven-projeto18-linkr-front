@@ -20,7 +20,11 @@ export const Timeline = () => {
 
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
-    const navigate = useNavigate()    
+    const navigate = useNavigate()
+
+    if (data === null) {
+        window.location.reload()
+    }
 
     const getPostsLikes = () => {
         const newPostsLikes = {}
