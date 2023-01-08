@@ -3,15 +3,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useContext } from "react";
-import UserContext from "../contexts/userContext";
 import styled from "styled-components"
 import { BASE_URL } from "../constants/url";
+import MyContext from "../contexts/MyContext";
 
 export default function SignIn() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
-    const { setData } = useContext(UserContext)
+    const { setData } = useContext(MyContext)
 
 
     function sign_in(e) {

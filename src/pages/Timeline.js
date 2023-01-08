@@ -9,16 +9,18 @@ import Header from "../constants/header";
 import axios from "axios";
 import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
+import { ReactTagify } from "react-tagify"
+import { useNavigate } from "react-router-dom";
 
 export const Timeline = () => {
-    const { token, user, config } = useContext(MyContext);
+    const { token, user, config, counter, setCounter } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
 
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
-
+    const navigate = useNavigate()    
     
     const getPostsLikes = () => {
         const newPostsLikes = {}
@@ -68,6 +70,15 @@ export const Timeline = () => {
         });
     }
 
+    const addHashtag = async (name, post_id) => {
+        try {
+            await axios.post(`${BASE_URL}/hashtag`, { name, post_id }, config);
+            setCounter(counter + 1)
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
             await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
@@ -83,6 +94,13 @@ export const Timeline = () => {
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
+
+        //Estilo da hashtag
+        const tagStyle = {
+            color: 'white',
+            fontWeight: 700,
+            cursor: 'pointer'
+        };
 
         return (
             <PostsContainer>
@@ -112,7 +130,14 @@ export const Timeline = () => {
                     {
                         !edit
                             ?
-                            <Description>{description}</Description>
+                            <ReactTagify
+                                tagStyle={tagStyle}
+                                tagClicked={(tag) => {
+                                    navigate(`/hashtag/${tag.replace('#', '')}`)
+                                }}
+                            >
+                                <Description>{description}</Description>
+                            </ReactTagify>
                             :
                             <EditInput
                                 id="edit"
@@ -187,6 +212,7 @@ export const Timeline = () => {
         setLoading(true);
 
         const validURL = validateURL(form.link);
+        const descriptionWords = form.description.split(" ")
 
         if (!validURL) {
             setLoading(false);
@@ -194,7 +220,14 @@ export const Timeline = () => {
         }
 
         try {
-            await axios.post(`${BASE_URL}/timeline`, form, config);
+            const res = await axios.post(`${BASE_URL}/timeline`, form, config);
+
+            descriptionWords.map((w) => {
+                if (w.includes("#")) {
+                    addHashtag(w.replace("#", ""), res.data.post_id)
+                }
+            })
+
             setLoading(false);
             setForm({ description: "", link: "" });
             getPosts();
