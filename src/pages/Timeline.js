@@ -7,44 +7,37 @@ import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
+import { Tooltip } from 'react-tooltip'
+import 'react-tooltip/dist/react-tooltip.css'
 import { ReactTagify } from "react-tagify"
 import { useNavigate } from "react-router-dom";
 
 export const Timeline = () => {
-    const { token, user, config, counter, setCounter } = useContext(MyContext);
+    const { config, counter, setCounter, data } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
 
     const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(false);    
     const navigate = useNavigate()    
 
-    // Alterar a URL
-    const getPostLikes = () => {
-        posts.forEach(post => {
-            const request = axios.get("http://localhost:5000/likes", { id: post.id });
-            request.then((res) => {
-                const newPostsLikes = [...postsLikes, res.data]
-                setPostsLikes(newPostsLikes);
-            });
-            request.catch((err) => {
-                alert("Algo deu errado e a culpa é nossa. =/");
-                console.log(err);
-            });
+    const getPostsLikes = () => {
+        const newPostsLikes = {}
+        const promisses = []
+        posts.forEach( (post) => {
+            const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
+            promisses.push(request)
+            request.then((res)=>{
+                newPostsLikes[post.id] = res.data.map(user => data.user.id)
+            }).catch(error => {
+                    alert("Algo deu errado e a culpa é nossa. =/");
+                console.log(error);
+            })
         })
+        Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
     }
-
-    //ID de todos os posts curtidos por esse usuário
-    const userPostsLiked = [];
-    postsLikes.forEach(postLikes => {
-        postLikes.forEach(postLike => {
-            if (postLike.user_id === user.id) {
-                userPostsLiked.push(postLike.post_id)
-            }
-        })
-    })
-
+    
     const getPosts = async () => {
         try {
             const res = await axios.get(`${BASE_URL}/timeline`, config);
@@ -60,14 +53,17 @@ export const Timeline = () => {
 
     useEffect(() => {
         getPosts();
-        //getPostLikes();
-    }, [setErrorMessage]);
+    }, [setErrorMessage]);    
+
+    useEffect(() => {
+        getPostsLikes();
+    }, [posts]); 
 
     const likeHandler = (postId) => {
-        const request = axios.post("http://localhost:5000/likes", config, { id: postId });
-        request.then((res) => {
-
-        });
+        const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
+            request.then((res) => {
+                getPostsLikes();
+            });
         request.catch((err) => {
             alert("Algo deu errado e a culpa é nossa. =/");
             console.log(err);
@@ -94,7 +90,7 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, user_id, description, link, user } = post;
+        const { id, user_id, description, link, user: u } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
@@ -109,14 +105,14 @@ export const Timeline = () => {
         return (
             <PostsContainer>
                 <ProfilePicture
-                    src={user.photo}
+                    src={u.photo}
                     alt="profile picture"
                 />
                 <Post>
                     <PostHeader>
-                        <Username>{user.name}</Username>
+                        <Username>{u.name}</Username>
                         {
-                            user.id !== user_id
+                            data.user.id !== user_id
                                 ?
                                 <div>
                                     <EditIcon onClick={() => {
@@ -174,9 +170,10 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon onClick={() => likeHandler(id)}>
-                    {userPostsLiked.includes(id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
+                    {postsLikes[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
+                <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
             </PostsContainer>
         );
     };
@@ -186,6 +183,8 @@ export const Timeline = () => {
             return <Message>Loading...</Message>
         } else if (posts.length === 0) {
             return <Message>There are no posts yet</Message>
+        } else if (!Object.keys(postsLikes).length) {
+            return <Message>Loading...</Message>
         } else if (posts) {
             return (
                 <ul>
@@ -236,7 +235,6 @@ export const Timeline = () => {
             setLoading(false);
             alert("Houve um erro ao publicar seu link");
         }
-
     };
 
     return (
@@ -247,7 +245,7 @@ export const Timeline = () => {
                     <Title>timeline</Title>
                     <PublishContainer>
                         <ProfilePicture
-                            src={user.photo}
+                            src={data.user.photo}
                             alt="profile picture"
                         />
                         <Form>
@@ -281,9 +279,7 @@ export const Timeline = () => {
                         : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
                     }
                 </TimelineContainer>
-
                 <TrendingList/>
-
             </TimelineBackground>
         </>
     );
@@ -498,4 +494,6 @@ const LikeIcon = styled.div`
 position: relative;
 right: 560px;
 top: 60px;
+width: 30px;
+height: 30px;
 `;

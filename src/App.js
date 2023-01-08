@@ -10,13 +10,12 @@ import { useState } from 'react';
 export default function App() {
     const [data, setData] = useState('');
     const [counter, setCounter] = useState(0);
-    const [user, setUser] = useState("");
 
     const token = localStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}`}};
 
     return (
-        <MyContext.Provider value={{token, user, setUser, config, counter, setCounter, data, setData}}>
+        <MyContext.Provider value={{token, config, counter, setCounter, data, setData}}>
 
         <BrowserRouter>
             <GlobalStyle />
