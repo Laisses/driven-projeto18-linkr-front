@@ -11,12 +11,15 @@ import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
 import { ReactTagify } from "react-tagify"
 import { useNavigate } from "react-router-dom";
+import ReactModal from "react-modal";
+
 
 export const Timeline = () => {
     const { config, counter, setCounter, data } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
@@ -25,9 +28,6 @@ export const Timeline = () => {
     if (data === null) {
         window.location.reload()
     }
-
-    console.log(postsLikes)
-    console.log(data.user)
 
     const getPostsLikes = () => {
         const newPostsLikes = {}
@@ -44,10 +44,10 @@ export const Timeline = () => {
         })
         Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
     }
-
+    
     const deletePostHandler = async (postId) => {
         try {
-            await axios.delete(`${BASE_URL}/timeline`, {id: postId}, config);
+            await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
             getPosts();
         } catch (error) {
             setErrorMessage(true);
@@ -141,7 +141,7 @@ export const Timeline = () => {
                                 </div>
                                 <div>
                                     <DeleteIcon onClick={() => {
-                                        deletePostHandler(id)
+                                        openModal()
                                     }}>
                                         <TiTrash size={"20px"} />
                                     </DeleteIcon>
@@ -198,6 +198,7 @@ export const Timeline = () => {
                 <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
                     {postsLikes[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
+                
                 <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
             </PostsContainer>
         );
@@ -262,9 +263,54 @@ export const Timeline = () => {
         }
     };
 
+    const openModal = () => {
+        setIsModalOpen(true)
+    }
+
+    const closeModal = () => {
+        setIsModalOpen(false)
+    }
+
     return (
         <>
             <Header />
+            <ReactModal
+                    isOpen={isModalOpen}
+                    contentLabel="Minimal Modal Example"
+                    style={{overlay: {
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+                      },
+                      content: {
+                        position: 'absolute',
+                        width: '497px',
+                        height: '262px',
+                        top: '30%',
+                        bottom: '30%',
+                        left: '30%',
+                        right: '30%',
+                        border: '1px solid #333333',
+                        background: '#333333',
+                        overflow: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        borderRadius: '50px',
+                        outline: 'none',
+                        padding: '20px',
+
+                      }}}
+                >
+                    <ModalContainer>
+                        <ModalText>Are you sure you want to delete this post?</ModalText>
+                        <ModalButtons>
+                        <ModalButtonCancel onClick={closeModal}>Cancelar</ModalButtonCancel>
+                        <ModalButtonConrfirm onClick={() => deletePostHandler()}>Confirmar</ModalButtonConrfirm>
+                        </ModalButtons>
+                    </ModalContainer>
+            </ReactModal>
             <TimelineBackground>
                 <TimelineContainer>
                     <Title>timeline</Title>
@@ -530,3 +576,46 @@ top: 60px;
 width: 30px;
 height: 30px;
 `;
+
+const ModalContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+`
+
+const ModalText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+    font-size: 34px;
+    line-height: 41px;
+    text-align: center;
+    color: #FFFFFF;
+margin-bottom: 35px;
+margin-top: 10px;
+`
+
+const ModalButtons = styled.div`
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+`
+
+const ModalButtonCancel = styled.button`
+    width: 134px;
+    height: 37px;
+    left: 733px;
+    top: 509px;
+    background: #FFFFFF;
+    border-radius: 5px;
+    border: none;
+`
+
+const ModalButtonConrfirm = styled.button`
+    width: 134px;
+    height: 37px;
+    background: #1877F2;
+    border-radius: 5px;
+    border: none;
+`
