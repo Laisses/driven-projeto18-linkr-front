@@ -6,10 +6,11 @@ import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 export const Timeline = () => {
     const { token, user, config } = useContext(MyContext);
-    const [posts, setPosts] = useState(undefined);
+    const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
     const [loading, setLoading] = useState(false);
@@ -79,7 +80,7 @@ export const Timeline = () => {
                     alt="profile picture"
                 />
                 <Post>
-                    <Username>{user.name}</Username>
+                    <StyledLink to={`/user/${user.id}`}><Username>{user.name}</Username></StyledLink>
                     <Description>{description}</Description>
                     <LinkContainer>
                         <LinkMetaData onClick={() => openNewTab(link.address)}>
@@ -197,7 +198,10 @@ export const Timeline = () => {
     );
 };
 
-
+const StyledLink = styled(Link)`
+    text-decoration: none;
+    color: #FFFFFF;
+`
 
 const TimelineBackground = styled.div`
     background-color: #333333;
