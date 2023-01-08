@@ -26,6 +26,9 @@ export const Timeline = () => {
         window.location.reload()
     }
 
+    console.log(postsLikes)
+    console.log(data.user)
+
     const getPostsLikes = () => {
         const newPostsLikes = {}
         const promisses = []
@@ -33,7 +36,7 @@ export const Timeline = () => {
             const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
             promisses.push(request)
             request.then((res)=>{
-                newPostsLikes[post.id] = res.data.map(user => data.user.id)
+                newPostsLikes[post.id] = res.data.map(user => user.id)
             }).catch(error => {
                     alert("Algo deu errado e a culpa é nossa. =/");
                 console.log(error);
@@ -42,9 +45,9 @@ export const Timeline = () => {
         Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
     }
 
-    const deletePostHandler = async (post) => {
+    const deletePostHandler = async (postId) => {
         try {
-            await axios.delete(`${BASE_URL}/timeline`, {id: post.id}, config);
+            await axios.delete(`${BASE_URL}/timeline`, {id: postId}, config);
             getPosts();
         } catch (error) {
             setErrorMessage(true);
@@ -138,7 +141,7 @@ export const Timeline = () => {
                                 </div>
                                 <div>
                                     <DeleteIcon onClick={() => {
-                                        deletePostHandler(post)
+                                        deletePostHandler(id)
                                     }}>
                                         <TiTrash size={"20px"} />
                                     </DeleteIcon>
