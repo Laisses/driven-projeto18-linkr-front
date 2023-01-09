@@ -134,22 +134,25 @@ export const Timeline = () => {
         }
     };
 
-    const tooltipInfo = (post) => {
-        const result = postsLikes[post.id].map((like) => {
-            return (
-            <TooltipLike key={like.id}>
-            <TooltipImg src={like.photo}/>
-            <TooltipName>{like.name}</TooltipName>
-            </TooltipLike>)
-        }, [])
-        return <TooltipContainer>{result}</TooltipContainer>
-    }
+    
 
     const ListofPosts = post => {
         const { id, description, link, user: u, likes } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
+
+        
+        const tooltipInfo = (postId) => {
+            const result = postsLikes[postId]?.map((like) => {
+                return (
+                <TooltipLike key={like.id}>
+                <TooltipImg src={like.photo}/>
+                <TooltipName>{like.name}</TooltipName>
+                </TooltipLike>)
+            }, [])
+            return <TooltipContainer>{result}</TooltipContainer>
+        }
 
         //Estilo da hashtag
         const tagStyle = {
@@ -234,15 +237,17 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
+                <LikeIcon id={`anchor-element${id}`} onClick={()=>{
+                    getPosts()
+                    likeHandler(id)
+                    }}>
                     {postsLikesUserId[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                     <LikeText>{`${likes} likes`}</LikeText>
                 </LikeIcon>
-                <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(post)}</Tooltip>
+                <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(id)}</Tooltip>
             </PostsContainer>
         );
     };
-    console.log(postsLikes)
 
     const Posts = () => {
         if (!posts) {
