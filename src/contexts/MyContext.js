@@ -8,7 +8,6 @@ function MyContextProvider ({children}) {
     const [counter, setCounter] = useState(0);
     const [token, setToken] = useState(localStorage.getItem("token"))
     const [data, setData] = useState({user: {photo: ''}})
-    JSON.parse(dataObjStringyfied)
 
     const config = { headers: { Authorization: `Bearer ${token}`}};
 
