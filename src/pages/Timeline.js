@@ -1,7 +1,7 @@
 import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
-import { TiPencil } from "react-icons/ti";
+import { TiDelete, TiPencil, TiTrash } from "react-icons/ti";
 import { useContext, useEffect, useState } from "react";
 import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
@@ -11,13 +11,16 @@ import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
 import { ReactTagify } from "react-tagify"
 import { useNavigate } from "react-router-dom";
+import ReactModal from "react-modal";
+
 
 export const Timeline = () => {
     const { config, counter, setCounter, data } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
-
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalPostId, setModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
     const navigate = useNavigate()
@@ -33,13 +36,24 @@ export const Timeline = () => {
             const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
             promisses.push(request)
             request.then((res)=>{
-                newPostsLikes[post.id] = res.data.map(user => data.user.id)
+                newPostsLikes[post.id] = res.data.map(user => user.id)
             }).catch(error => {
                     alert("Algo deu errado e a culpa é nossa. =/");
                 console.log(error);
             })
         })
         Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
+    }
+    
+    const deletePostHandler = async (postId) => {
+        try {
+            await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
+            setIsModalOpen(false);
+            setModalPostId(null)
+            getPosts();
+        } catch (error) {
+            setErrorMessage(true);
+        }
     }
     
     const getPosts = async () => {
@@ -94,7 +108,7 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, user_id, description, link, user: u } = post;
+        const { id, description, link, user: u } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
@@ -116,8 +130,9 @@ export const Timeline = () => {
                     <PostHeader>
                         <Username>{u.name}</Username>
                         {
-                            data.user.id !== user_id
+                            data.user.id === u.id
                                 ?
+                                <HeaderIcons>
                                 <div>
                                     <EditIcon onClick={() => {
                                         setEdit(!edit);
@@ -126,6 +141,14 @@ export const Timeline = () => {
                                         <TiPencil size={"20px"} />
                                     </EditIcon>
                                 </div>
+                                <div>
+                                    <DeleteIcon onClick={() => {
+                                        openModal(id)
+                                    }}>
+                                        <TiTrash size={"20px"} />
+                                    </DeleteIcon>
+                                </div>
+                                </HeaderIcons>
                                 :
                                 <></>
                         }
@@ -177,6 +200,7 @@ export const Timeline = () => {
                 <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
                     {postsLikes[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
+                
                 <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
             </PostsContainer>
         );
@@ -241,9 +265,55 @@ export const Timeline = () => {
         }
     };
 
+    const openModal = (id) => {
+        setIsModalOpen(true)
+        setModalPostId(id)
+    }
+
+    const closeModal = () => {
+        setIsModalOpen(false)
+    }
+
     return (
         <>
             <Header />
+            <ReactModal
+                    isOpen={isModalOpen}
+                    contentLabel="Minimal Modal Example"
+                    style={{overlay: {
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+                      },
+                      content: {
+                        position: 'absolute',
+                        width: '497px',
+                        height: '262px',
+                        top: '30%',
+                        bottom: '30%',
+                        left: '30%',
+                        right: '30%',
+                        border: '1px solid #333333',
+                        background: '#333333',
+                        overflow: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        borderRadius: '50px',
+                        outline: 'none',
+                        padding: '20px',
+
+                      }}}
+                >
+                    <ModalContainer>
+                        <ModalText>Are you sure you want to delete this post?</ModalText>
+                        <ModalButtons>
+                        <ModalButtonCancel onClick={closeModal}>Cancelar</ModalButtonCancel>
+                        <ModalButtonConrfirm onClick={() => deletePostHandler(modalPostId)}>Confirmar</ModalButtonConrfirm>
+                        </ModalButtons>
+                    </ModalContainer>
+            </ReactModal>
             <TimelineBackground>
                 <TimelineContainer>
                     <Title>timeline</Title>
@@ -438,7 +508,15 @@ const Username = styled.div`
     font-size: 19px;
 `;
 
+const HeaderIcons = styled.div`
+    display: flex;
+`
+
 const EditIcon = styled.div`
+    width: 24px;
+`;
+
+const DeleteIcon = styled.div`
     width: 24px;
 `;
 
@@ -501,3 +579,46 @@ top: 60px;
 width: 30px;
 height: 30px;
 `;
+
+const ModalContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+`
+
+const ModalText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+    font-size: 34px;
+    line-height: 41px;
+    text-align: center;
+    color: #FFFFFF;
+margin-bottom: 35px;
+margin-top: 10px;
+`
+
+const ModalButtons = styled.div`
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+`
+
+const ModalButtonCancel = styled.button`
+    width: 134px;
+    height: 37px;
+    left: 733px;
+    top: 509px;
+    background: #FFFFFF;
+    border-radius: 5px;
+    border: none;
+`
+
+const ModalButtonConrfirm = styled.button`
+    width: 134px;
+    height: 37px;
+    background: #1877F2;
+    border-radius: 5px;
+    border: none;
+`
