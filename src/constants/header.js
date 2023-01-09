@@ -42,47 +42,47 @@ export default function Header () {
 
             <InputContainer profiles={profiles}>
                 <img src={searchIcon} alt="Search Icon" />
-                <DebounceInput 
+                <DebounceInput
                     placeholder="Search for people"
                     minLength={3}
                     debounceTimeout={300}
-                    onChange={e => setName(e.target.value)} 
+                    onChange={e => setName(e.target.value)}
                 />
 
                 <div>
                     {profiles.map((p) => {
                         return (
-                            <StyledLink to={`/user/${p.id}`} key={p.id}> 
+                            <StyledLink to={`/user/${p.id}`} key={p.id}>
                                 <span>
                                     <img src={p.photo} alt="Profile Pic" />
                                     <h2>{p.name}</h2>
                                 </span>
                             </StyledLink>
                         )
-                    })}             
+                    })}
                 </div>
-                
+
             </InputContainer>
-            
+
             <LogoutCase>
                 {rotate ? <MdKeyboardArrowUp onClick={turnArrow}/> : <MdKeyboardArrowDown onClick={turnArrow}/>}
-                
+
                 <img onClick={turnArrow} src={data.user.photo} alt="user"/>
 
-                <LogoutDiv rotate={rotate.toString()}> 
-                    <Link 
-                        onClick={() => { 
-                            localStorage.removeItem("token"); 
+                <LogoutDiv rotate={rotate.toString()}>
+                    <Link
+                        onClick={() => {
+                            localStorage.removeItem("token");
                             localStorage.removeItem("data");
                             setToken('')
-                        }} 
+                        }}
                         to={"/"}
                     >
                         Logout
                     </Link>
                 </LogoutDiv>
 
-                <LogoutBackground rotate={rotate.toString()} onClick={turnArrow}/> 
+                <LogoutBackground rotate={rotate.toString()} onClick={turnArrow}/>
             </LogoutCase>
         </Container>
     )
@@ -118,7 +118,7 @@ const LogoutCase = styled.div`
     align-items: center;
     margin-left: 15px;
     gap: 16px;
-    
+
     svg {
         cursor: pointer;
         font-size: 35px;
@@ -144,9 +144,9 @@ const LogoutDiv = styled.div`
     border-radius: 0px 0px 0px 20px;
     cursor: pointer;
 
-    a { 
+    a {
         z-index: 2;
-        cursor: pointer;  
+        cursor: pointer;
         font-family: 'Lato';
         font-style: normal;
         font-weight: 700;
@@ -166,9 +166,8 @@ const LogoutBackground = styled.div`
     height: 100vh;
 `
 const InputContainer = styled.div`
-    position: absolute;
+    position: relative;
     z-index: 1;
-    right: 35%;
 
     input {
         width: 563px;
@@ -187,13 +186,14 @@ const InputContainer = styled.div`
     > * {
         &:first-child {
             position: absolute;
-            right: 16px;
-            bottom: 5px;
+            right: 10px;
+            top: 7px;
         }
     }
 
     div {
-        width: 100%;
+        width: 563px;
+        text-align: center;
         height: 176px;
         position: absolute;
         top: 0;
@@ -201,7 +201,6 @@ const InputContainer = styled.div`
         padding-top: 46px;
         border-radius: 8px;
         z-index: -1;
-        top: 0;
         display: ${(props) => props.profiles.length === 0 ? 'none' : 'flex'};
         flex-direction: column;
         overflow-y: scroll;
@@ -217,6 +216,7 @@ const InputContainer = styled.div`
             align-items: center;
             padding-left: 16px;
             padding: 8px;
+
 
             &:hover {
                 cursor: pointer;
@@ -236,6 +236,10 @@ const InputContainer = styled.div`
                 font-family: 'Lato';
             }
         }
+    }
+
+    @media (max-width: 850px) {
+        top: 75px;
     }
 `
 

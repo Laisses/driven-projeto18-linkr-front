@@ -7,22 +7,24 @@ import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
+import { Link } from "react-router-dom";
 import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
 import { ReactTagify } from "react-tagify"
 import { useNavigate } from "react-router-dom";
 import ReactModal from "react-modal";
+import { device } from "../constants/device";
 
 
 export const Timeline = () => {
     const { config, counter, setCounter, data } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
-    const [postsLikes, setPostsLikes] = useState([])    
+    const [postsLikes, setPostsLikes] = useState([])
     const [form, setForm] = useState({description: "", link: ""});
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalPostId, setModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(false);    
+    const [errorMessage, setErrorMessage] = useState(false);
     const navigate = useNavigate()
 
     if (data === null) {
@@ -44,7 +46,7 @@ export const Timeline = () => {
         })
         Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
     }
-    
+
     const deletePostHandler = async (postId) => {
         try {
             await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
@@ -55,7 +57,7 @@ export const Timeline = () => {
             setErrorMessage(true);
         }
     }
-    
+
     const getPosts = async () => {
         try {
             const res = await axios.get(`${BASE_URL}/timeline`, config);
@@ -71,11 +73,11 @@ export const Timeline = () => {
 
     useEffect(() => {
         getPosts();
-    }, [setErrorMessage]);    
+    }, [setErrorMessage]);
 
     useEffect(() => {
         getPostsLikes();
-    }, [posts]); 
+    }, [posts]);
 
     const likeHandler = (postId) => {
         const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
@@ -95,6 +97,23 @@ export const Timeline = () => {
         } catch (err) {
             console.log(err);
         }
+    }
+
+    const editHashtag = async (post_id, text) => {
+        try {
+            await axios.delete(`${BASE_URL}/hashtag/${post_id}`, config);
+            setCounter(counter + 1)
+        } catch (err) {
+            console.log(err);
+        }
+
+        const descriptionWords = text.split(" ")
+
+        descriptionWords.map((w) => {
+            if (w.includes("#")) {
+                addHashtag(w.replace("#", ""), post_id)
+            }
+        })
     }
 
     const submitNewDesc = async (id, text, onErrorFn) => {
@@ -128,7 +147,7 @@ export const Timeline = () => {
                 />
                 <Post>
                     <PostHeader>
-                        <Username>{u.name}</Username>
+                        <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
                         {
                             data.user.id === u.id
                                 ?
@@ -175,6 +194,7 @@ export const Timeline = () => {
                                 autoFocus={true}
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
+                                        editHashtag(id, text)
                                         setEditing(true);
                                         submitNewDesc(id, text, () => setEditing(false));
                                     } else if (e.key === "Escape") {
@@ -184,7 +204,7 @@ export const Timeline = () => {
                                 }}
                             />
                     }
-
+                    
                     <LinkContainer>
                         <LinkMetaData onClick={() => openNewTab(link.address)}>
                             <LinkTitle>{link.title}</LinkTitle>
@@ -318,7 +338,7 @@ export const Timeline = () => {
                 <TimelineContainer>
                     <Title>timeline</Title>
                     <PublishContainer>
-                        <ProfilePicture
+                        <ProfilePictureForm
                             src={data.user.photo}
                             alt="profile picture"
                         />
@@ -359,7 +379,10 @@ export const Timeline = () => {
     );
 };
 
-
+const StyledLink = styled(Link)`
+    text-decoration: none;
+    color: #FFFFFF;
+`
 
 const TimelineBackground = styled.div`
     background-color: #333333;
@@ -368,9 +391,20 @@ const TimelineBackground = styled.div`
 `;
 
 const TimelineContainer = styled.div`
-    width: 616px;
     margin-right: 50px;
     padding-top: 70px;
+    max-width: 611px;
+    min-width: 611px;
+
+    @media ${device.laptop} {
+        margin-right: 0;
+        min-width: 0;
+    }
+
+    @media ${device.tablet} {
+        width: 100%;
+        min-width: 0;
+    }
 `;
 
 const Title = styled.h1`
@@ -378,16 +412,23 @@ const Title = styled.h1`
     font-size: 43px;
     color: #ffffff;
     margin-bottom: 43px;
+
+    @media ${device.mobileL} {
+        padding-left: 16px;
+    }
 `;
 
 const PublishContainer = styled.div`
-    width: 611px;
     height: 209px;
     padding: 16px;
     background-color: #ffffff;
     border-radius: 16px;
     display: flex;
     margin-bottom: 30px;
+
+    @media ${device.tablet} {
+        border-radius: 0;
+    }
 `;
 
 const Message = styled.p`
@@ -406,6 +447,22 @@ const Form = styled.form`
     padding-left: 18px;
     display: flex;
     flex-direction: column;
+    width: 90%;
+
+    @media ${device.mobileL} {
+        width: 100%;
+        padding-left: 0;
+    }
+`;
+
+const ProfilePictureForm = styled.img`
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+
+    @media ${device.mobileL} {
+        display: none;
+    }
 `;
 
 const FormTitle = styled.h2`
@@ -415,13 +472,16 @@ const FormTitle = styled.h2`
     color: #707070;
     padding-top: 6px;
     padding-bottom: 10px;
+
+    @media ${device.mobileL} {
+        text-align: center;
+    }
 `;
 
 const LinkInput = styled.input`
     font-family: 'Lato', sans-serif;
     font-size: 15px;
     font-weight: 300;
-    width: 503px;
     height: 30px;
     border-radius: 3px;
     background-color: #EFEFEF;
@@ -437,7 +497,6 @@ const TextInput = styled.textarea`
     font-family: 'Lato', sans-serif;
     font-size: 15px;
     font-weight: 300;
-    width: 503px;
     height: 66px;
     border-radius: 3px;
     background-color: #EFEFEF;
@@ -455,7 +514,6 @@ const EditInput = styled.textarea`
     font-family: 'Lato', sans-serif;
     font-size: 15px;
     font-weight: 300;
-    width: 503px;
     border-radius: 3px;
     background-color: #EFEFEF;
     border: none;
@@ -481,7 +539,6 @@ const Button = styled.button`
 `;
 
 const PostsContainer = styled.div`
-    width: 611px;
     height: 276px;
     padding: 16px;
     margin-top: 16px;
@@ -489,6 +546,10 @@ const PostsContainer = styled.div`
     color: #ffffff;
     background-color: #171717;
     display: flex;
+
+    @media ${device.tablet} {
+        border-radius: 0;
+    }
 `;
 
 const Post = styled.li`
@@ -527,7 +588,6 @@ const Description = styled.div`
 `;
 
 const LinkContainer = styled.div`
-    width: 503px;
     height: 155px;
     border: 1px solid #4D4D4D;
     border-radius: 11px;
@@ -536,15 +596,22 @@ const LinkContainer = styled.div`
 `;
 
 const LinkMetaData = styled.div`
-    width: 349px;
+    width: 70%;
     padding: 24px;
+
+    @media ${device.mobileL} {
+        width: 60%;
+    }
 `;
 
 const LinkImage = styled.img`
     background-color: white;
-    width: 154px;
-    height: 155px;
+    width: 30%;
     border-radius: 0px 12px 13px 0px;
+
+    @media ${device.mobileL} {
+        width: 40%;
+    }
 `;
 
 const LinkTitle = styled.h4`
