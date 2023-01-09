@@ -388,13 +388,16 @@ const TimelineContainer = styled.div`
     margin-right: 50px;
     padding-top: 70px;
     max-width: 611px;
+    min-width: 611px;
 
     @media ${device.laptop} {
         margin-right: 0;
+        min-width: 0;
     }
 
     @media ${device.tablet} {
         width: 100%;
+        min-width: 0;
     }
 `;
 
