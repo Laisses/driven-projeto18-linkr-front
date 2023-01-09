@@ -385,6 +385,11 @@ export const Timeline = () => {
 };
 
 //Styled Components
+const StyledLink = styled(Link)`
+    text-decoration: none;
+    color: #FFFFFF;
+`
+
 const TimelineBackground = styled.div`
     background-color: #333333;
     display: flex;
