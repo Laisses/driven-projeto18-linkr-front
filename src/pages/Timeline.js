@@ -108,7 +108,7 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u } = post;
+        const { id, description, link, user: u, likes } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
@@ -199,8 +199,8 @@ export const Timeline = () => {
                 </Post>
                 <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
                     {postsLikes[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                    <LikeText>{`${likes} likes`}</LikeText>
                 </LikeIcon>
-                
                 <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
             </PostsContainer>
         );
@@ -579,6 +579,16 @@ top: 60px;
 width: 30px;
 height: 30px;
 `;
+
+const LikeText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+`
 
 const ModalContainer = styled.div`
     display: flex;
