@@ -13,8 +13,6 @@ export default function SignIn() {
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
 
-    console.log(token)
-
     function sign_in(e) {
         e.preventDefault()
         const body = {
