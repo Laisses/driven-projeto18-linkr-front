@@ -12,7 +12,6 @@ export default function SignIn() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
-    const { setData } = useContext(MyContext)
     const [disable, setDisable] = useState(false)
 
     function sign_in(e) {
@@ -56,7 +55,7 @@ export default function SignIn() {
                     <form onSubmit={sign_in}>
                         <input placeholder="e-mail" type="email" value={email} onChange={e => setEmail(e.target.value)} required></input>
                         <input placeholder="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required></input>
-                        <button type="submit" disabled={disable}>{disable ? "" : "Log In"}</button>
+                        <button type="submit" disabled={disable}>{disable ? "Loading..." : "Log In"}</button>
                     </form>
                 </ContainerInput>
                 <ContainerSwitch>
@@ -190,8 +189,8 @@ const ContainerInput = styled.div`
     }
 
     :disabled {
-    transform: scale(0.97);
-    opacity: 0.6;
+    transform: scale(0.95);
+    opacity: 0.3;
   }
     }
 `
