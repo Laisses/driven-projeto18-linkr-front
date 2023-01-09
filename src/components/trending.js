@@ -11,7 +11,7 @@ export default function TrendingList () {
     const [list, setList] = useState()
     const { config, setCounter, counter, token } = useContext(MyContext)
     const navigate = useNavigate()
-
+    
     async function getTrending () {
         if (token === null) return "You must be logged in to access this page"
 

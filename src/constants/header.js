@@ -61,6 +61,7 @@ export default function Header () {
                         )
                     })}
                 </div>
+                
             </InsideInputContainer>
             
             <LogoutCase>
@@ -74,9 +75,8 @@ export default function Header () {
                             localStorage.removeItem("token");
                             localStorage.removeItem("data");
                             setToken(null)
-                            setData({user: {photo: 'https://edipro.com.br/wp-content/uploads/2020/09/anonimo.png'}})
+                            setData({user: {photo: ''}})
                         }} 
-
                         to={"/"}
                     >
                         Logout
