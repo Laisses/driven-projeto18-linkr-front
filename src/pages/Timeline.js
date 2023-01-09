@@ -97,6 +97,23 @@ export const Timeline = () => {
         }
     }
 
+    const editHashtag = async (post_id, text) => {
+        try {
+            await axios.delete(`${BASE_URL}/hashtag/${post_id}`, config);
+            setCounter(counter + 1)
+        } catch (err) {
+            console.log(err);
+        }
+
+        const descriptionWords = text.split(" ")
+
+        descriptionWords.map((w) => {
+            if (w.includes("#")) {
+                addHashtag(w.replace("#", ""), post_id)
+            }
+        })
+    }
+
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
             await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
@@ -175,6 +192,7 @@ export const Timeline = () => {
                                 autoFocus={true}
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
+                                        editHashtag(id, text)
                                         setEditing(true);
                                         submitNewDesc(id, text, () => setEditing(false));
                                     } else if (e.key === "Escape") {
