@@ -7,6 +7,7 @@ import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
+import { Link } from "react-router-dom";
 import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
 import { ReactTagify } from "react-tagify"
@@ -145,7 +146,7 @@ export const Timeline = () => {
                 />
                 <Post>
                     <PostHeader>
-                        <Username>{u.name}</Username>
+                        <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
                         {
                             data.user.id === u.id
                                 ?
@@ -202,7 +203,7 @@ export const Timeline = () => {
                                 }}
                             />
                     }
-
+                    
                     <LinkContainer>
                         <LinkMetaData onClick={() => openNewTab(link.address)}>
                             <LinkTitle>{link.title}</LinkTitle>
@@ -377,7 +378,10 @@ export const Timeline = () => {
     );
 };
 
-
+const StyledLink = styled(Link)`
+    text-decoration: none;
+    color: #FFFFFF;
+`
 
 const TimelineBackground = styled.div`
     background-color: #333333;
