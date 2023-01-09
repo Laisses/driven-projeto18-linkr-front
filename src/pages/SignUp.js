@@ -3,10 +3,13 @@ import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import styled from "styled-components"
 import { BASE_URL } from "../constants/url"
+import { useState } from "react"
 
 export default function SignUp() {
 
     const navigate = useNavigate()
+    const [disable, setDisable] = useState(false)
+
     const body = {
         email: "",
         password: "",
@@ -15,6 +18,7 @@ export default function SignUp() {
     }
 
     function sign_up(e) {
+        setDisable(true)
         e.preventDefault()
 
         const promise = axios.post(`${BASE_URL}/signup`, body)
@@ -24,8 +28,8 @@ export default function SignUp() {
             navigate("/")
         })
         promise.catch(err => {
-
             console.log(err.response.data.message)
+            setDisable(false)
             alert("Dados cadastrais inválidos!")
         })
     }
@@ -43,7 +47,7 @@ export default function SignUp() {
                         <input placeholder="password" type="password" onChange={e => body.password = e.target.value} required></input>
                         <input placeholder="username" type="text" onChange={e => body.username = e.target.value} required></input>
                         <input placeholder="picture url" type="text" onChange={e => body.pictureUrl = e.target.value} required></input>
-                        <button type="submit" >Sign Up</button>
+                        <button type="submit" disabled={disable}>{disable ? "" : "Sign Up"}</button>
                     </form>
                 </ContainerInput>
                 <ContainerSwitch>
@@ -171,6 +175,15 @@ const ContainerInput = styled.div`
     font-weight: 700;
     font-size: 20px;
     cursor: pointer;
+
+    :hover{
+    transform: scale(0.97);
+    }
+
+    :disabled {
+    transform: scale(0.97);
+    opacity: 0.6;
+  }
     }
 `
 const ContainerSwitch = styled.div`

@@ -12,9 +12,12 @@ export default function SignIn() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
+    const { setData } = useContext(MyContext)
+    const [disable, setDisable] = useState(false)
 
     function sign_in(e) {
         e.preventDefault()
+        setDisable(true)
         const body = {
             email: email,
             password: password
@@ -34,8 +37,8 @@ export default function SignIn() {
             navigate("/timeline")
         })
         promise.catch(err => {
-
             console.log(err.response.data.message)
+            setDisable(false)
             alert("Usuário ou senha inválidos")
         })
     }
@@ -51,7 +54,7 @@ export default function SignIn() {
                     <form onSubmit={sign_in}>
                         <input placeholder="e-mail" type="email" value={email} onChange={e => setEmail(e.target.value)} required></input>
                         <input placeholder="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required></input>
-                        <button type="submit" >Log In</button>
+                        <button type="submit" disabled={disable}>{disable ? "" : "Log In"}</button>
                     </form>
                 </ContainerInput>
                 <ContainerSwitch>
@@ -179,6 +182,15 @@ const ContainerInput = styled.div`
     font-weight: 700;
     font-size: 20px;
     cursor: pointer;
+
+    :hover{
+    transform: scale(0.97);
+    }
+
+    :disabled {
+    transform: scale(0.97);
+    opacity: 0.6;
+  }
     }
 `
 const ContainerSwitch = styled.div`
