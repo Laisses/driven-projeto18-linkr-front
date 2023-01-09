@@ -8,15 +8,16 @@ import MyContext from './contexts/MyContext';
 import { useState } from 'react';
 
 export default function App() {
-    const [data, setData] = useState('');
     const [counter, setCounter] = useState(0);
-    const [user, setUser] = useState("");
+    const [token, setToken] = useState(localStorage.getItem("token"))
 
-    const token = localStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}`}};
+    
+    const dataObjStringyfied = localStorage.getItem("data");
+    const data = JSON.parse(dataObjStringyfied)
 
     return (
-        <MyContext.Provider value={{token, user, setUser, config, counter, setCounter, data, setData}}>
+        <MyContext.Provider value={{token, config, counter, setCounter, data, setToken}}>
 
         <BrowserRouter>
             <GlobalStyle />

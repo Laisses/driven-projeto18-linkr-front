@@ -7,11 +7,12 @@ import TrendingList from "../components/trending";
 import { useContext, useEffect, useState } from "react";
 import MyContext from "../contexts/MyContext";
 import { ReactTagify } from "react-tagify"
+import { Oval } from 'react-loader-spinner'
 
 export default function HashtagPage () {
     const { hashtag } = useParams()
     const { config, setCounter, counter } = useContext(MyContext)
-    const [feed, setFeed] = useState([])
+    const [feed, setFeed] = useState()
     const navigate = useNavigate()
 
     //Estilo da hashtag
@@ -26,6 +27,7 @@ export default function HashtagPage () {
             const res = await axios.get(`${BASE_URL}/hashtag/${hashtag}`, config)
             setFeed(res.data)
         } catch (err) {
+            setFeed([])
             console.log(err)
         }
     }
@@ -42,33 +44,51 @@ export default function HashtagPage () {
                 <LeftPart>
                     <h1># {hashtag}</h1>
 
-                    <ul>
-                        {feed.map((t, idx) => 
-                            <li key={idx}>
-                                <div>
-                                    <img src={t.photo} alt="user"/>
-                                    {t.likes}
-                                </div>
+                    {
+                        feed === undefined
+                            ?       
+                        <LoadingDiv>
+                            <Oval 
+                                color="white"
+                                secondaryColor="gray"
+                            />
+                        </LoadingDiv>
+                            :
+                        <ul>
+                            {
+                                feed.length === 0
+                                    ?
+                                <LoadingDiv>
+                                    <p>There are no posts for this hashtag</p>
+                                </LoadingDiv>
+                                    :
+                                feed.map((t, idx) => 
+                                    <li key={idx}>
+                                        <div>
+                                            <img src={t.photo} alt="user"/>
+                                            {t.likes}
+                                        </div>
 
-                                <span>
-                                    {'t.name'}
-                                    <ReactTagify
-                                        tagStyle={tagStyle}
-                                        tagClicked={(tag) => {
-                                            setCounter(counter + 1)
-                                            navigate(`/hashtag/${tag.replace('#', '')}`)
-                                        }}
-                                    >
-                                        <p>
-                                            {'t.description Olá meu nome é esdrinhas e tenho uma #react #javascript'}
-                                        </p>
-                                    </ReactTagify>
+                                        <span>
+                                            {'t.name'}
+                                            <ReactTagify
+                                                tagStyle={tagStyle}
+                                                tagClicked={(tag) => {
+                                                    setCounter(counter + 1)
+                                                    navigate(`/hashtag/${tag.replace('#', '')}`)
+                                                }}
+                                            >
+                                                <p>
+                                                    {t.description}
+                                                </p>
+                                            </ReactTagify>
 
-                                    {'t.link'}
-                                </span>
-                            </li>
-                        )}
-                    </ul>
+                                            {t.link}
+                                        </span>
+                                    </li>
+                                )}
+                        </ul>
+                        }
                 </LeftPart>
 
                 <TrendingList/>
@@ -83,6 +103,25 @@ const Container = styled.div`
     display: flex;
     justify-content: center;
 `
+const LoadingDiv = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 611px;
+    height: 276px;
+    color: #ffffff;
+    font-size: 30px;
+    text-align: end;
+    font-family: 'Lato';
+
+    p {
+        width: 100%;
+        height: 100%;
+        text-align: start;
+        margin-top: 20px;
+    }
+`
+
 //"LeftPart" é o componente dos post, só fiz isso pra ver como fica
 const LeftPart = styled.div`
     display: flex;

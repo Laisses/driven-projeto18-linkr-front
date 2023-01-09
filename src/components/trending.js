@@ -4,9 +4,10 @@ import { useContext, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { BASE_URL } from "../constants/url"
 import MyContext from "../contexts/MyContext"
+import { Oval } from "react-loader-spinner"
 
 export default function TrendingList () {
-    const [list, setList] = useState([])
+    const [list, setList] = useState()
     const { config, setCounter, counter } = useContext(MyContext)
     
     async function getTrending () {
@@ -26,12 +27,27 @@ export default function TrendingList () {
         <Container>
             <h1>trending</h1>
 
-            <ul>
-                {list.map((t, idx) => 
-                    <Link onClick={() => setCounter(counter + 1)} to={`/hashtag/${t.name}`} key={idx.toString()}>
-                        <li> # {t.name}</li>
-                    </Link>)}
-            </ul>
+            {
+                list === undefined
+                    ?            
+                <Oval
+                    color="white"
+                    secondaryColor="gray"
+                />
+                    :
+                <ul>
+                    {
+                    list.length === 0
+                        ?
+                    <p>No hashtags have been tagged yet</p>
+                        :
+                    list.map((t, idx) => 
+                        <Link onClick={() => setCounter(counter + 1)} to={`/hashtag/${t.name}`} key={idx.toString()}>
+                            <li> # {t.name}</li>
+                        </Link>)
+                    }
+                </ul>
+            }
         </Container>
     )
 }
@@ -44,6 +60,11 @@ const Container = styled.div`
     right: 260px;
     border-radius: 16px;
     margin-top: 155px;
+
+    svg {
+        width: 100%;
+        margin-top: 30px;
+    }
 
     h1 {
         cursor: default;

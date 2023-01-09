@@ -1,16 +1,19 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import styled from "styled-components";
 import searchIcon from "../assets/images/searchIcon.png"
 import { MdKeyboardArrowUp, MdKeyboardArrowDown } from 'react-icons/md'
 import axios from "axios";
 import { DebounceInput } from "react-debounce-input";
 import { Link } from "react-router-dom";
+import MyContext from "../contexts/MyContext";
+import { BASE_URL } from "./url";
 
 export default function Header () {
     const [rotate, setRotate] = useState(false)
     const [name, setName] = useState("");
     const [profiles, setProfiles] = useState([])
     const token = "TEMP"
+    const { data, setToken, config } = useContext(MyContext)
 
     useEffect(() => {
         if (name.length < 3) {
@@ -18,13 +21,7 @@ export default function Header () {
             return
         }
 
-        const headers = {
-            headers: {
-                authorization: `Bearer ${token}`
-            }
-        }
-
-        axios.get(`http://localhost:4000/users/${name}`, headers)
+        axios.get(`${BASE_URL}/users/${name}`, config)
         .then((res) => {
             setProfiles(res.data)
         })
@@ -55,10 +52,12 @@ export default function Header () {
                 <div>
                     {profiles.map((p) => {
                         return (
-                        <span key={p.id}>
-                            <img src={p.photo} alt="Profile Pic" />
-                            <h2>{p.name}</h2>
-                        </span>
+                            <StyledLink to={`/user/${p.id}`} key={p.id}> 
+                                <span>
+                                    <img src={p.photo} alt="Profile Pic" />
+                                    <h2>{p.name}</h2>
+                                </span>
+                            </StyledLink>
                         )
                     })}             
                 </div>
@@ -67,14 +66,23 @@ export default function Header () {
             
             <LogoutCase>
                 {rotate ? <MdKeyboardArrowUp onClick={turnArrow}/> : <MdKeyboardArrowDown onClick={turnArrow}/>}
-                <img onClick={turnArrow} src={'https://i.pinimg.com/564x/28/6d/3a/286d3a9ba31ca7825c6ac858e01e6771--cute-baby-animals-animal-babies.jpg'} alt="user"/>
+                
+                <img onClick={turnArrow} src={data.user.photo} alt="user"/>
+
                 <LogoutDiv rotate={rotate.toString()}> 
-                    <Link onClick={() => {localStorage.removeItem("token")}} to={"/"}>Logout</Link>
+                    <Link 
+                        onClick={() => { 
+                            localStorage.removeItem("token"); 
+                            localStorage.removeItem("data");
+                            setToken('')
+                        }} 
+                        to={"/"}
+                    >
+                        Logout
+                    </Link>
                 </LogoutDiv>
-                {/* 
-                    Solução improvisada para o segundo requisito do card do trello (discutir com o grupo depois)
-                    <LogoutBackground rotate={rotate.toString()} onClick={turnArrow}/> 
-                */}
+
+                <LogoutBackground rotate={rotate.toString()} onClick={turnArrow}/> 
             </LogoutCase>
         </Container>
     )
@@ -118,8 +126,9 @@ const LogoutCase = styled.div`
 
     img {
         cursor: pointer;
-        width: 50px;
-        border-radius: 100px;
+        width: 45px;
+        height: 45px;
+        border-radius: 500px;
     }
 `
 const LogoutDiv = styled.div`
@@ -147,19 +156,18 @@ const LogoutDiv = styled.div`
         color: #FFFFFF;
     }
 `
-// const LogoutBackground = styled.div`
-//     z-index: 1;
-//     position: absolute;
-//     display: ${props => props.rotate === 'false' ? 'none' : 'flex'};
-//     left: 0;
-//     top: 0;
-//     width: 99.20vw;
-//     height: 100vh;
-// `
-const InputContainer = styled.div`
-    position: absolute;
+const LogoutBackground = styled.div`
     z-index: 1;
-    right: 35%;
+    position: absolute;
+    display: ${props => props.rotate === 'false' ? 'none' : 'flex'};
+    left: 0;
+    top: 0;
+    width: 99.20vw;
+    height: 100vh;
+`
+const InputContainer = styled.div`
+    position: relative;
+    z-index: 1;
 
     input {
         width: 563px;
@@ -178,13 +186,14 @@ const InputContainer = styled.div`
     > * {
         &:first-child {
             position: absolute;
-            right: 16px;
-            bottom: 5px;
+            right: 10px;
+            top: 7px;
         }
     }
 
     div {
-        width: 100%;
+        width: 563px;
+        text-align: center;
         height: 176px;
         position: absolute;
         top: 0;
@@ -192,7 +201,6 @@ const InputContainer = styled.div`
         padding-top: 46px;
         border-radius: 8px;
         z-index: -1;
-        top: 0;
         display: ${(props) => props.profiles.length === 0 ? 'none' : 'flex'};
         flex-direction: column;
         overflow-y: scroll;
@@ -229,4 +237,12 @@ const InputContainer = styled.div`
             }
         }
     }
+
+    @media (max-width: 850px) {
+        top: 75px;
+    }
+`
+
+const StyledLink = styled(Link)`
+    text-decoration: none;
 `
