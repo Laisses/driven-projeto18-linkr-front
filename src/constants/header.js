@@ -166,9 +166,8 @@ const LogoutBackground = styled.div`
     height: 100vh;
 `
 const InputContainer = styled.div`
-    position: absolute;
+    position: relative;
     z-index: 1;
-    right: 35%;
 
     input {
         width: 563px;
@@ -187,13 +186,14 @@ const InputContainer = styled.div`
     > * {
         &:first-child {
             position: absolute;
-            right: 16px;
-            bottom: 5px;
+            right: 10px;
+            top: 7px;
         }
     }
 
     div {
-        width: 100%;
+        width: 563px;
+        text-align: center;
         height: 176px;
         position: absolute;
         top: 0;
@@ -201,7 +201,6 @@ const InputContainer = styled.div`
         padding-top: 46px;
         border-radius: 8px;
         z-index: -1;
-        top: 0;
         display: ${(props) => props.profiles.length === 0 ? 'none' : 'flex'};
         flex-direction: column;
         overflow-y: scroll;
@@ -217,6 +216,7 @@ const InputContainer = styled.div`
             align-items: center;
             padding-left: 16px;
             padding: 8px;
+            
 
             &:hover {
                 cursor: pointer;
@@ -236,6 +236,10 @@ const InputContainer = styled.div`
                 font-family: 'Lato';
             }
         }
+    }
+
+    @media (max-width: 850px) {
+        top: 75px;
     }
 `
 
