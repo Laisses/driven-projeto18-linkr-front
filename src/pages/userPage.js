@@ -7,26 +7,24 @@ import { MyContext } from "../contexts/MyContext";
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
-import { Link } from "react-router-dom";
 import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
 import { ReactTagify } from "react-tagify"
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import ReactModal from "react-modal";
-import { device } from "../constants/device";
+import { device } from "../constants/device"
 
 
-export const Timeline = () => {
+export const UserPage = () => {
     const { config, counter, setCounter, data, token } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
-    const [postsLikes, setPostsLikes] = useState([])
-    const [form, setForm] = useState({description: "", link: ""});
+    const [postsLikes, setPostsLikes] = useState([])    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalPostId, setModalPostId] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(false);
-    const [postsLikesUserId, setPostsLikesUserId] = useState([])
+    const [errorMessage, setErrorMessage] = useState(false);  
+    const [userName, setUserName] = useState("")  
     const navigate = useNavigate()
+    const { userId } = useParams()
 
     useEffect(() => {
         if (token === null) {
@@ -37,21 +35,19 @@ export const Timeline = () => {
 
     const getPostsLikes = () => {
         const newPostsLikes = {}
-        const newPostsLikesUserId = {}
         const promisses = []
         posts.forEach( (post) => {
             const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
             promisses.push(request)
             request.then((res)=>{
-                newPostsLikes[post.id] = res.data.map(user => user)
-                newPostsLikesUserId[post.id] = res.data.map(user => user.id)
+                newPostsLikes[post.id] = res.data.map(user => user.id)
             }).catch(error => {
                 console.log(error);
             })
         })
-        Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes)).then(()=>setPostsLikesUserId(newPostsLikesUserId))
+        Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
     }
-
+    
     const deletePostHandler = async (postId) => {
         try {
             await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
@@ -62,12 +58,12 @@ export const Timeline = () => {
             setErrorMessage(true);
         }
     }
-
+    
     const getPosts = async () => {
         if (token === null) return "You must be logged in to access this page"
-
+        
         try {
-            const res = await axios.get(`${BASE_URL}/timeline`, config);
+            const res = await axios.get(`${BASE_URL}/user/${userId}`, config);
             setPosts(res.data);
         } catch (error) {
             setErrorMessage(true);
@@ -82,11 +78,11 @@ export const Timeline = () => {
 
     useEffect(() => {
         getPosts();
-    }, [setErrorMessage]);
+    }, [setErrorMessage, counter]);    
 
     useEffect(() => {
         getPostsLikes();
-    }, [posts]);
+    }, [posts]); 
 
     const likeHandler = (postId) => {
         const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
@@ -134,19 +130,9 @@ export const Timeline = () => {
         }
     };
 
-    const tooltipInfo = (post) => {
-        const result = postsLikes[post.id].map((like) => {
-            return (
-            <TooltipLike key={like.id}>
-            <TooltipImg src={like.photo}/>
-            <TooltipName>{like.name}</TooltipName>
-            </TooltipLike>)
-        }, [])
-        return <TooltipContainer>{result}</TooltipContainer>
-    }
-
     const ListofPosts = post => {
-        const { id, description, link, user: u, likes } = post;
+        const { id, description, link, user: u } = post;
+        setUserName(u.name)
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
@@ -166,7 +152,7 @@ export const Timeline = () => {
                 />
                 <Post>
                     <PostHeader>
-                        <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
+                        <Username>{u.name}</Username>
                         {
                             data.user.id === u.id
                                 ?
@@ -190,6 +176,7 @@ export const Timeline = () => {
                                 :
                                 <></>
                         }
+
                     </PostHeader>
                     {
                         !edit
@@ -222,6 +209,7 @@ export const Timeline = () => {
                                 }}
                             />
                     }
+
                     <LinkContainer>
                         <LinkMetaData onClick={() => openNewTab(link.address)}>
                             <LinkTitle>{link.title}</LinkTitle>
@@ -235,14 +223,13 @@ export const Timeline = () => {
                     </LinkContainer>
                 </Post>
                 <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
-                    {postsLikesUserId[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
-                    <LikeText>{`${likes} likes`}</LikeText>
+                    {postsLikes[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
-                <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(post)}</Tooltip>
+                
+                <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
             </PostsContainer>
         );
     };
-    console.log(postsLikes)
 
     const Posts = () => {
         if (!posts) {
@@ -254,52 +241,13 @@ export const Timeline = () => {
         } else if (posts) {
             return (
                 <ul>
-                    {posts.map(p => <ListofPosts
-                        key={p.id}
-                        {...p}
+                    {posts.map((p, idx) => 
+                        <ListofPosts
+                            key={idx}
+                            {...p}
                     />)}
                 </ul>
             );
-        }
-    };
-
-    const handleForm = e => {
-        const { name, value } = e.target;
-        setForm({ ...form, [name]: value });
-    };
-
-    const validateURL = url => {
-        const regex = /^((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www\.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w\-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[.!/\\\w]*))?)/;
-
-        return regex.test(url);
-    };
-
-    const submitForm = async () => {
-        setLoading(true);
-
-        const validURL = validateURL(form.link);
-        const descriptionWords = form.description.split(" ")
-
-        if (!validURL) {
-            setLoading(false);
-            return alert("You must choose a valid link!");
-        }
-
-        try {
-            const res = await axios.post(`${BASE_URL}/timeline`, form, config);
-
-            descriptionWords.forEach((w) => {
-                if (w.includes("#")) {
-                    addHashtag(w.replace("#", ""), res.data.post_id)
-                }
-            })
-
-            setLoading(false);
-            setForm({ description: "", link: "" });
-            getPosts();
-        } catch (error) {
-            setLoading(false);
-            alert("Houve um erro ao publicar seu link");
         }
     };
 
@@ -354,38 +302,8 @@ export const Timeline = () => {
             </ReactModal>
             <TimelineBackground>
                 <TimelineContainer>
-                    <Title>timeline</Title>
-                    <PublishContainer>
-                        <ProfilePictureForm
-                            src={data.user.photo}
-                            alt="profile picture"
-                        />
-                        <Form>
-                            <FormTitle>What are you going to share today?</FormTitle>
-                            <LinkInput
-                                type="text"
-                                id="link"
-                                name="link"
-                                placeholder="http://..."
-                                value={form.link}
-                                onChange={handleForm}
-                                disabled={loading}
-                                required
-                            />
-                            <TextInput
-                                id="description"
-                                name="description"
-                                placeholder="Awesome article about #javascript"
-                                value={form.description}
-                                onChange={handleForm}
-                                disabled={loading}
-                            />
-                            {!loading
-                                ? <Button onClick={submitForm}>Publish</Button>
-                                : <Button disabled={loading}>Publishing</Button>
-                            }
-                        </Form>
-                    </PublishContainer>
+                    <Title> {userName}'s posts</Title>
+                    
                     {!errorMessage
                         ? <Posts />
                         : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
@@ -397,32 +315,21 @@ export const Timeline = () => {
     );
 };
 
-//Styled Components
-const StyledLink = styled(Link)`
-    text-decoration: none;
-    color: #FFFFFF;
-`
+
 
 const TimelineBackground = styled.div`
-    background-color: #333333;
     display: flex;
     justify-content: center;
 `;
 
 const TimelineContainer = styled.div`
+    width: 616px;
     margin-right: 50px;
     padding-top: 70px;
-    max-width: 611px;
-    min-width: 611px;
 
-    @media ${device.laptop} {
-        margin-right: 0;
-        min-width: 0;
-    }
-
-    @media ${device.tablet} {
-        width: 100%;
-        min-width: 0;
+    @media (max-width: 840px) {
+        margin-right: 0px;
+        padding-top: 30px;
     }
 `;
 
@@ -432,21 +339,8 @@ const Title = styled.h1`
     color: #ffffff;
     margin-bottom: 43px;
 
-    @media ${device.mobileL} {
-        padding-left: 16px;
-    }
-`;
-
-const PublishContainer = styled.div`
-    height: 209px;
-    padding: 16px;
-    background-color: #ffffff;
-    border-radius: 16px;
-    display: flex;
-    margin-bottom: 30px;
-
-    @media ${device.tablet} {
-        border-radius: 0;
+    @media (max-width: 840px) {
+        margin-left: 20px;
     }
 `;
 
@@ -462,77 +356,11 @@ const ProfilePicture = styled.img`
     border-radius: 50%;
 `;
 
-const Form = styled.form`
-    padding-left: 18px;
-    display: flex;
-    flex-direction: column;
-    width: 90%;
-
-    @media ${device.mobileL} {
-        width: 100%;
-        padding-left: 0;
-    }
-`;
-
-const ProfilePictureForm = styled.img`
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-
-    @media ${device.mobileL} {
-        display: none;
-    }
-`;
-
-const FormTitle = styled.h2`
-    font-family: 'Lato', sans-serif;
-    font-size: 20px;
-    font-weight: 300;
-    color: #707070;
-    padding-top: 6px;
-    padding-bottom: 10px;
-
-    @media ${device.mobileL} {
-        text-align: center;
-    }
-`;
-
-const LinkInput = styled.input`
-    font-family: 'Lato', sans-serif;
-    font-size: 15px;
-    font-weight: 300;
-    height: 30px;
-    border-radius: 3px;
-    background-color: #EFEFEF;
-    border: none;
-    margin-top: 5px;
-    padding-left: 10px;
-    &:focus {
-        outline: none;
-    }
-`;
-
-const TextInput = styled.textarea`
-    font-family: 'Lato', sans-serif;
-    font-size: 15px;
-    font-weight: 300;
-    height: 66px;
-    border-radius: 3px;
-    background-color: #EFEFEF;
-    border: none;
-    margin-top: 5px;
-    padding-top: 5px;
-    padding-left: 10px;
-    resize: none;
-    &:focus {
-        outline: none;
-    }
-`;
-
 const EditInput = styled.textarea`
     font-family: 'Lato', sans-serif;
     font-size: 15px;
     font-weight: 300;
+    width: 503px;
     border-radius: 3px;
     background-color: #EFEFEF;
     border: none;
@@ -543,18 +371,6 @@ const EditInput = styled.textarea`
     &:focus {
         outline: none;
     }
-`;
-
-const Button = styled.button`
-    width: 112px;
-    height: 31px;
-    border: none;
-    border-radius: 5px;
-    margin-top: 5px;
-    color: #ffffff;
-    background-color: ${props => !props.disabled ? "#1877F2" : "#1154ab"};
-    align-self: flex-end;
-    cursor: pointer;
 `;
 
 const PostsContainer = styled.div`
@@ -593,6 +409,7 @@ const Username = styled.div`
 
 const HeaderIcons = styled.div`
     display: flex;
+    gap: 5px;
 `
 
 const EditIcon = styled.div`
@@ -615,6 +432,10 @@ const LinkContainer = styled.div`
     border-radius: 11px;
     margin-top: 10px;
     display: flex;
+
+    @media (max-width: 840px) {
+       height: auto;
+    }
 `;
 
 const LinkMetaData = styled.div`
@@ -663,26 +484,11 @@ const LinkUrl = styled.p`
 
 const LikeIcon = styled.div`
     position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    top: 30%;
+    top: 36%;
     left: 25px;
-    width: auto;
-    height: auto;
-    gap: 5px;
+    width: 30px;
+    height: 30px;
 `;
-
-const LikeText = styled.span`
-    font-family: 'Lato', sans-serif;
-    font-style: normal;
-    font-weight: 400;
-    font-size: 11px;
-    line-height: 13px;
-    text-align: center;
-    color: #FFFFFF;
-    width: 35px;
-`
 
 const ModalContainer = styled.div`
     display: flex;
@@ -725,30 +531,4 @@ const ModalButtonConrfirm = styled.button`
     background: #1877F2;
     border-radius: 5px;
     border: none;
-`
-
-const TooltipContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    width: 100px;
-`
-
-const TooltipLike = styled.div`
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 15px;
-`
-
-const TooltipImg = styled.img`
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-`
-
-const TooltipName = styled.span`
-    font-family: 'Lato', sans-serif;
-    text-align: center;
-    color: #FFFFFF;
 `
