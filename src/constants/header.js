@@ -5,15 +5,14 @@ import { MdKeyboardArrowUp, MdKeyboardArrowDown } from 'react-icons/md'
 import axios from "axios";
 import { DebounceInput } from "react-debounce-input";
 import { Link } from "react-router-dom";
-import MyContext from "../contexts/MyContext";
+import { MyContext } from "../contexts/MyContext";
 import { BASE_URL } from "./url";
 
 export default function Header () {
     const [rotate, setRotate] = useState(false)
     const [name, setName] = useState("");
     const [profiles, setProfiles] = useState([])
-    const token = "TEMP"
-    const { data, setToken, config } = useContext(MyContext)
+    const { data, setToken, config, setData } = useContext(MyContext)
 
     useEffect(() => {
         if (name.length < 3) {
@@ -37,10 +36,11 @@ export default function Header () {
     }
 
     return (
+        <>
         <Container>
             <Link to={"/timeline"}>linkr</Link>
 
-            <InputContainer profiles={profiles}>
+            <InsideInputContainer profiles={profiles}>
                 <img src={searchIcon} alt="Search Icon" />
                 <DebounceInput 
                     placeholder="Search for people"
@@ -62,7 +62,7 @@ export default function Header () {
                     })}             
                 </div>
                 
-            </InputContainer>
+            </InsideInputContainer>
             
             <LogoutCase>
                 {rotate ? <MdKeyboardArrowUp onClick={turnArrow}/> : <MdKeyboardArrowDown onClick={turnArrow}/>}
@@ -74,7 +74,8 @@ export default function Header () {
                         onClick={() => { 
                             localStorage.removeItem("token"); 
                             localStorage.removeItem("data");
-                            setToken('')
+                            setToken(null)
+                            setData({user: {photo: 'https://edipro.com.br/wp-content/uploads/2020/09/anonimo.png'}})
                         }} 
                         to={"/"}
                     >
@@ -85,6 +86,34 @@ export default function Header () {
                 <LogoutBackground rotate={rotate.toString()} onClick={turnArrow}/> 
             </LogoutCase>
         </Container>
+
+        <OutsideInputContainer profiles={profiles} rotate={rotate.toString()}>
+            <img src={searchIcon} alt="Search Icon" />
+
+            <DebounceInput 
+                placeholder="Search for people"
+                minLength={3}
+                debounceTimeout={300}
+                onChange={e => setName(e.target.value)} 
+            >
+
+                
+            </DebounceInput>
+
+            <div>
+                {profiles.map((p) => {
+                    return (
+                        <StyledLink to={`/user/${p.id}`} key={p.id}> 
+                            <span>
+                                <img src={p.photo} alt="Profile Pic" />
+                                <h2>{p.name}</h2>
+                            </span>
+                        </StyledLink>
+                    )
+                })}             
+            </div>
+        </OutsideInputContainer>
+        </>
     )
 }
 
@@ -100,6 +129,10 @@ const Container = styled.header`
     color: #ffffff;
     font-family: 'Passion One', cursive;
     padding: 0 30px;
+
+    @media (max-width: 840px) {
+        width: auto;
+    }
 
     a {
         color: #ffffff;
@@ -165,7 +198,7 @@ const LogoutBackground = styled.div`
     width: 99.20vw;
     height: 100vh;
 `
-const InputContainer = styled.div`
+const InsideInputContainer = styled.div`
     position: relative;
     z-index: 1;
 
@@ -239,10 +272,97 @@ const InputContainer = styled.div`
     }
 
     @media (max-width: 850px) {
-        top: 75px;
+        display: none;
     }
 `
+const OutsideInputContainer = styled.div`
+    position: relative;
+    display: none;
+    z-index: 1;
+    padding: 16px;
 
+    input {
+        width: 100%;
+        height: 45px;
+        border-radius: 8px;
+        padding: 16px;
+        font-size: 19px;
+        border: none;
+
+        &::placeholder {
+            color: #C6C6C6;
+            font-size: 19px;
+        }
+
+        @media (max-width: 840px) {
+            margin-top: ${props => props.rotate === 'false' ? 0 : '50px'};
+        }
+    }
+
+    img {
+        @media (max-width: 840px) {
+            margin-top: ${props => props.rotate === 'false' ? 0 : '50px'};
+        }
+
+        &:first-child {
+            position: absolute;
+            right: 30px;
+        }
+    }
+
+    div {
+        width: 563px;
+        text-align: center;
+        height: 176px;
+        position: absolute;
+        top: 0;
+        background-color: #E7E7E7;
+        padding-top: 46px;
+        border-radius: 8px;
+        z-index: -1;
+        display: ${(props) => props.profiles.length === 0 ? 'none' : 'flex'};
+        flex-direction: column;
+        overflow-y: scroll;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        span {
+            display: flex;
+            align-items: center;
+            padding-left: 16px;
+            padding: 8px;
+            
+
+            &:hover {
+                cursor: pointer;
+                background-color: #C6C6C6;
+            }
+
+            img {
+                width: 39px;
+                height: 39px;
+                border-radius: 100%;
+                margin-right: 12px;
+            }
+
+            h2 {
+                color: #515151;
+                font-size: 19px;
+                font-family: 'Lato';
+            }
+        }
+    }
+
+    @media (max-width: 850px) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+`
 const StyledLink = styled(Link)`
     text-decoration: none;
 `

@@ -1,21 +1,26 @@
 import axios from "axios"
 import styled from "styled-components"
 import { useContext, useEffect, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { BASE_URL } from "../constants/url"
-import MyContext from "../contexts/MyContext"
+import { MyContext } from "../contexts/MyContext"
 import { Oval } from "react-loader-spinner"
 
 export default function TrendingList () {
     const [list, setList] = useState()
-    const { config, setCounter, counter } = useContext(MyContext)
+    const { config, setCounter, counter, token } = useContext(MyContext)
+    const navigate = useNavigate()
     
     async function getTrending () {
+        if (token === null) return "You must be logged in to access this page"
+
         try {
             const res = await axios.get(`${BASE_URL}/hashtag`, config);
             setList(res.data)
         } catch (err) {
             console.log(err)
+            alert("You must login to access this page");
+            navigate("/");
         }
     }
 
@@ -60,6 +65,10 @@ const Container = styled.div`
     right: 260px;
     border-radius: 16px;
     margin-top: 155px;
+
+    @media (max-width: 840px) {
+        display: none;
+    }
 
     svg {
         width: 100%;
