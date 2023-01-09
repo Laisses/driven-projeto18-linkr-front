@@ -1,45 +1,61 @@
 import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
+import { TiDelete, TiPencil, TiTrash } from "react-icons/ti";
 import { useContext, useEffect, useState } from "react";
 import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { Tooltip } from 'react-tooltip'
+import 'react-tooltip/dist/react-tooltip.css'
+import { ReactTagify } from "react-tagify"
+import { useNavigate } from "react-router-dom";
+import ReactModal from "react-modal";
+
 
 export const Timeline = () => {
-    const { token, user, config } = useContext(MyContext);
+    const { config, counter, setCounter, data } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [form, setForm] = useState({description: "", link: ""});
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalPostId, setModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);    
+    const navigate = useNavigate()
 
-    // Alterar a URL
-    const getPostLikes = () => {
-        posts.forEach(post => {
-            const request = axios.get("http://localhost:5000/likes", {id: post.id});
-            request.then((res) => {
-                const newPostsLikes = [...postsLikes, res.data]
-                setPostsLikes(newPostsLikes);
-        });
-        request.catch((err) => {
-            alert("Algo deu errado e a culpa é nossa. =/");
-            console.log(err);
-        });
-        })
+    if (data === null) {
+        window.location.reload()
     }
 
-    //ID de todos os posts curtidos por esse usuário
-    const userPostsLiked = [];
-    postsLikes.forEach(postLikes => {
-        postLikes.forEach(postLike => {
-            if (postLike.user_id === user.id) {
-                userPostsLiked.push(postLike.post_id)
-            }
+    const getPostsLikes = () => {
+        const newPostsLikes = {}
+        const promisses = []
+        posts.forEach( (post) => {
+            const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
+            promisses.push(request)
+            request.then((res)=>{
+                newPostsLikes[post.id] = res.data.map(user => user.id)
+            }).catch(error => {
+                    alert("Algo deu errado e a culpa é nossa. =/");
+                console.log(error);
+            })
         })
-    })
+        Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
+    }
+    
+    const deletePostHandler = async (postId) => {
+        try {
+            await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
+            setIsModalOpen(false);
+            setModalPostId(null)
+            getPosts();
+        } catch (error) {
+            setErrorMessage(true);
+        }
+    }
     
     const getPosts = async () => {
         try {
@@ -53,35 +69,123 @@ export const Timeline = () => {
     const openNewTab = url => {
         window.open(url, '_blank').focus();
     };
-    
-      useEffect(() => {
+
+    useEffect(() => {
         getPosts();
-        getPostLikes();
     }, [setErrorMessage]);    
 
+    useEffect(() => {
+        getPostsLikes();
+    }, [posts]); 
+
     const likeHandler = (postId) => {
-        const request = axios.post("http://localhost:5000/likes", config, {id: postId});
+        const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
             request.then((res) => {
-            
-        });
+                getPostsLikes();
+            });
         request.catch((err) => {
             alert("Algo deu errado e a culpa é nossa. =/");
             console.log(err);
         });
     }
 
+    const addHashtag = async (name, post_id) => {
+        try {
+            await axios.post(`${BASE_URL}/hashtag`, { name, post_id }, config);
+            setCounter(counter + 1)
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const submitNewDesc = async (id, text, onErrorFn) => {
+        try {
+            await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
+            getPosts();
+        } catch (err) {
+            alert("Sorry! Something went wrong, please try again later!")
+            onErrorFn();
+        }
+    };
+
     const ListofPosts = post => {
-        const {id, user_id, description, link, user} = post;
+        const { id, description, link, user: u } = post;
+        const [editing, setEditing] = useState(false);
+        const [edit, setEdit] = useState(false);
+        const [text, setText] = useState(description);
+
+        //Estilo da hashtag
+        const tagStyle = {
+            color: 'white',
+            fontWeight: 700,
+            cursor: 'pointer'
+        };
 
         return (
             <PostsContainer>
                 <ProfilePicture
-                    src={user.photo}
+                    src={u.photo}
                     alt="profile picture"
                 />
                 <Post>
-                    <StyledLink to={`/user/${user.id}`}><Username>{user.name}</Username></StyledLink>
-                    <Description>{description}</Description>
+                    <PostHeader>
+                        <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
+                        {
+                            data.user.id === u.id
+                                ?
+                                <HeaderIcons>
+                                <div>
+                                    <EditIcon onClick={() => {
+                                        setEdit(!edit);
+                                        setText(description);
+                                    }}>
+                                        <TiPencil size={"20px"} />
+                                    </EditIcon>
+                                </div>
+                                <div>
+                                    <DeleteIcon onClick={() => {
+                                        openModal(id)
+                                    }}>
+                                        <TiTrash size={"20px"} />
+                                    </DeleteIcon>
+                                </div>
+                                </HeaderIcons>
+                                :
+                                <></>
+                        }
+
+                    </PostHeader>
+                    {
+                        !edit
+                            ?
+                            <ReactTagify
+                                tagStyle={tagStyle}
+                                tagClicked={(tag) => {
+                                    navigate(`/hashtag/${tag.replace('#', '')}`)
+                                }}
+                            >
+                                <Description>{description}</Description>
+                            </ReactTagify>
+                            :
+                            <EditInput
+                                id="edit"
+                                name="edit"
+                                value={text}
+                                onChange={e => setText(e.target.value)}
+                                disabled={editing}
+                                autoFocus={true}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        setEditing(true);
+                                        submitNewDesc(id, text, () => setEditing(false));
+                                    } else if (e.key === "Escape") {
+                                        setEdit(false);
+                                        setText(description);
+                                    }
+                                }}
+                            />
+                    }
+                    
                     <LinkContainer>
                         <LinkMetaData onClick={() => openNewTab(link.address)}>
                             <LinkTitle>{link.title}</LinkTitle>
@@ -94,9 +198,11 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon onClick={()=>likeHandler(id)}>
-                    {userPostsLiked.includes(id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
+                    {postsLikes[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                 </LikeIcon>
+                
+                <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
             </PostsContainer>
         );
     };
@@ -106,6 +212,8 @@ export const Timeline = () => {
             return <Message>Loading...</Message>
         } else if (posts.length === 0) {
             return <Message>There are no posts yet</Message>
+        } else if (!Object.keys(postsLikes).length) {
+            return <Message>Loading...</Message>
         } else if (posts) {
             return (
                 <ul>
@@ -119,8 +227,8 @@ export const Timeline = () => {
     };
 
     const handleForm = e => {
-        const {name, value} = e.target;
-        setForm({...form, [name]: value});
+        const { name, value } = e.target;
+        setForm({ ...form, [name]: value });
     };
 
     const validateURL = url => {
@@ -133,6 +241,7 @@ export const Timeline = () => {
         setLoading(true);
 
         const validURL = validateURL(form.link);
+        const descriptionWords = form.description.split(" ")
 
         if (!validURL) {
             setLoading(false);
@@ -140,59 +249,112 @@ export const Timeline = () => {
         }
 
         try {
-            await axios.post(`${BASE_URL}/timeline`, form, config);
+            const res = await axios.post(`${BASE_URL}/timeline`, form, config);
+
+            descriptionWords.map((w) => {
+                if (w.includes("#")) {
+                    addHashtag(w.replace("#", ""), res.data.post_id)
+                }
+            })
+
             setLoading(false);
-            setForm({description: "", link: ""});
+            setForm({ description: "", link: "" });
             getPosts();
         } catch (error) {
             setLoading(false);
             alert("Houve um erro ao publicar seu link");
         }
-
     };
+
+    const openModal = (id) => {
+        setIsModalOpen(true)
+        setModalPostId(id)
+    }
+
+    const closeModal = () => {
+        setIsModalOpen(false)
+    }
 
     return (
         <>
-             <Header/>
-             <TimelineBackground>
-                    <TimelineContainer>
-                        <Title>timeline</Title>
-                        <PublishContainer>
-                            <ProfilePicture
-                                src={user.photo}
-                                alt="profile picture"
+            <Header />
+            <ReactModal
+                    isOpen={isModalOpen}
+                    contentLabel="Minimal Modal Example"
+                    style={{overlay: {
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+                      },
+                      content: {
+                        position: 'absolute',
+                        width: '497px',
+                        height: '262px',
+                        top: '30%',
+                        bottom: '30%',
+                        left: '30%',
+                        right: '30%',
+                        border: '1px solid #333333',
+                        background: '#333333',
+                        overflow: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        borderRadius: '50px',
+                        outline: 'none',
+                        padding: '20px',
+
+                      }}}
+                >
+                    <ModalContainer>
+                        <ModalText>Are you sure you want to delete this post?</ModalText>
+                        <ModalButtons>
+                        <ModalButtonCancel onClick={closeModal}>Cancelar</ModalButtonCancel>
+                        <ModalButtonConrfirm onClick={() => deletePostHandler(modalPostId)}>Confirmar</ModalButtonConrfirm>
+                        </ModalButtons>
+                    </ModalContainer>
+            </ReactModal>
+            <TimelineBackground>
+                <TimelineContainer>
+                    <Title>timeline</Title>
+                    <PublishContainer>
+                        <ProfilePicture
+                            src={data.user.photo}
+                            alt="profile picture"
+                        />
+                        <Form>
+                            <FormTitle>What are you going to share today?</FormTitle>
+                            <LinkInput
+                                type="text"
+                                id="link"
+                                name="link"
+                                placeholder="http://..."
+                                value={form.link}
+                                onChange={handleForm}
+                                disabled={loading}
+                                required
                             />
-                            <Form>
-                                <FormTitle>What are you going to share today?</FormTitle>
-                                <LinkInput
-                                    type="text"
-                                    id="link"
-                                    name="link"
-                                    placeholder="http://..."
-                                    value={form.link}
-                                    onChange={handleForm}
-                                    disabled={loading}
-                                    required
-                                />
-                                <TextInput
-                                    id="description"
-                                    name="description"
-                                    placeholder="Awesome article about #javascript"
-                                    value={form.description}
-                                    onChange={handleForm}
-                                    disabled={loading}
-                                />
-                                {!loading
-                                    ? <Button onClick={submitForm}>Publish</Button>
-                                    : <Button disabled={loading}>Publishing</Button>
-                                }
-                            </Form>
-                        </PublishContainer>
-                        {!errorMessage
-                            ? <Posts />
-                            : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
-                        }
+                            <TextInput
+                                id="description"
+                                name="description"
+                                placeholder="Awesome article about #javascript"
+                                value={form.description}
+                                onChange={handleForm}
+                                disabled={loading}
+                            />
+                            {!loading
+                                ? <Button onClick={submitForm}>Publish</Button>
+                                : <Button disabled={loading}>Publishing</Button>
+                            }
+                        </Form>
+                    </PublishContainer>
+                    {!errorMessage
+                        ? <Posts />
+                        : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
+                    }
                 </TimelineContainer>
+                <TrendingList/>
             </TimelineBackground>
         </>
     );
@@ -293,6 +455,23 @@ const TextInput = styled.textarea`
     }
 `;
 
+const EditInput = styled.textarea`
+    font-family: 'Lato', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    width: 503px;
+    border-radius: 3px;
+    background-color: #EFEFEF;
+    border: none;
+    margin-top: 5px;
+    padding-top: 5px;
+    padding-left: 10px;
+    resize: none;
+    &:focus {
+        outline: none;
+    }
+`;
+
 const Button = styled.button`
     width: 112px;
     height: 31px;
@@ -322,9 +501,27 @@ const Post = styled.li`
     padding-left: 18px;
 `;
 
-const Username = styled.h3`
+const PostHeader = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 30px;
+`;
+
+const Username = styled.div`
     font-size: 19px;
-    padding-top: 6px;
+`;
+
+const HeaderIcons = styled.div`
+    display: flex;
+`
+
+const EditIcon = styled.div`
+    width: 24px;
+`;
+
+const DeleteIcon = styled.div`
+    width: 24px;
 `;
 
 const Description = styled.div`
@@ -383,4 +580,49 @@ const LikeIcon = styled.div`
 position: relative;
 right: 560px;
 top: 60px;
+width: 30px;
+height: 30px;
 `;
+
+const ModalContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+`
+
+const ModalText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+    font-size: 34px;
+    line-height: 41px;
+    text-align: center;
+    color: #FFFFFF;
+margin-bottom: 35px;
+margin-top: 10px;
+`
+
+const ModalButtons = styled.div`
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+`
+
+const ModalButtonCancel = styled.button`
+    width: 134px;
+    height: 37px;
+    left: 733px;
+    top: 509px;
+    background: #FFFFFF;
+    border-radius: 5px;
+    border: none;
+`
+
+const ModalButtonConrfirm = styled.button`
+    width: 134px;
+    height: 37px;
+    background: #1877F2;
+    border-radius: 5px;
+    border: none;
+`
