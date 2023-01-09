@@ -25,6 +25,7 @@ export const Timeline = () => {
     const [modalPostId, setModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);
+    const [postsLikesUserId, setPostsLikesUserId] = useState([])
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -36,17 +37,19 @@ export const Timeline = () => {
 
     const getPostsLikes = () => {
         const newPostsLikes = {}
+        const newPostsLikesUserId = {}
         const promisses = []
         posts.forEach( (post) => {
             const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
             promisses.push(request)
             request.then((res)=>{
-                newPostsLikes[post.id] = res.data.map(user => user.id)
+                newPostsLikes[post.id] = res.data.map(user => user)
+                newPostsLikesUserId[post.id] = res.data.map(user => user.id)
             }).catch(error => {
                 console.log(error);
             })
         })
-        Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
+        Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes)).then(()=>setPostsLikesUserId(newPostsLikesUserId))
     }
 
     const deletePostHandler = async (postId) => {
@@ -131,8 +134,19 @@ export const Timeline = () => {
         }
     };
 
+    const tooltipInfo = (post) => {
+        const result = postsLikes[post.id].map((like) => {
+            return (
+            <TooltipLike key={like.id}>
+            <TooltipImg src={like.photo}/>
+            <TooltipName>{like.name}</TooltipName>
+            </TooltipLike>)
+        }, [])
+        return <TooltipContainer>{result}</TooltipContainer>
+    }
+
     const ListofPosts = post => {
-        const { id, description, link, user: u } = post;
+        const { id, description, link, user: u, likes } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
@@ -176,7 +190,6 @@ export const Timeline = () => {
                                 :
                                 <></>
                         }
-
                     </PostHeader>
                     {
                         !edit
@@ -209,7 +222,6 @@ export const Timeline = () => {
                                 }}
                             />
                     }
-                    
                     <LinkContainer>
                         <LinkMetaData onClick={() => openNewTab(link.address)}>
                             <LinkTitle>{link.title}</LinkTitle>
@@ -223,13 +235,14 @@ export const Timeline = () => {
                     </LinkContainer>
                 </Post>
                 <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
-                    {postsLikes[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                    {postsLikesUserId[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                    <LikeText>{`${likes} likes`}</LikeText>
                 </LikeIcon>
-
-                <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
+                <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(post)}</Tooltip>
             </PostsContainer>
         );
     };
+    console.log(postsLikes)
 
     const Posts = () => {
         if (!posts) {
@@ -545,6 +558,8 @@ const Button = styled.button`
 `;
 
 const PostsContainer = styled.div`
+    position: relative;
+    width: 611px;
     height: 276px;
     padding: 16px;
     margin-top: 16px;
@@ -553,8 +568,9 @@ const PostsContainer = styled.div`
     background-color: #171717;
     display: flex;
 
-    @media ${device.tablet} {
+    @media (max-width: 840px) {
         border-radius: 0;
+        width: 100%;
     }
 `;
 
@@ -646,12 +662,27 @@ const LinkUrl = styled.p`
 `;
 
 const LikeIcon = styled.div`
-position: relative;
-right: 560px;
-top: 60px;
-width: 30px;
-height: 30px;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    top: 30%;
+    left: 25px;
+    width: auto;
+    height: auto;
+    gap: 5px;
 `;
+
+const LikeText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 35px;
+`
 
 const ModalContainer = styled.div`
     display: flex;
@@ -694,4 +725,30 @@ const ModalButtonConrfirm = styled.button`
     background: #1877F2;
     border-radius: 5px;
     border: none;
+`
+
+const TooltipContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    width: 100px;
+`
+
+const TooltipLike = styled.div`
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 15px;
+`
+
+const TooltipImg = styled.img`
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+`
+
+const TooltipName = styled.span`
+    font-family: 'Lato', sans-serif;
+    text-align: center;
+    color: #FFFFFF;
 `
