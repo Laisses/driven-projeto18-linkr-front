@@ -1,9 +1,9 @@
 import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
-import { TiDelete, TiPencil, TiTrash } from "react-icons/ti";
+import { TiPencil, TiTrash } from "react-icons/ti";
 import { useContext, useEffect, useState } from "react";
-import MyContext from '../contexts/MyContext';
+import { MyContext } from "../contexts/MyContext";
 import TrendingList from "../components/trending";
 import Header from "../constants/header";
 import axios from "axios";
@@ -17,7 +17,7 @@ import { device } from "../constants/device";
 
 
 export const Timeline = () => {
-    const { config, counter, setCounter, data } = useContext(MyContext);
+    const { config, counter, setCounter, data, token } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])
     const [form, setForm] = useState({description: "", link: ""});
@@ -27,9 +27,12 @@ export const Timeline = () => {
     const [errorMessage, setErrorMessage] = useState(false);
     const navigate = useNavigate()
 
-    if (data === null) {
-        window.location.reload()
-    }
+    useEffect(() => {
+        if (token === null) {
+            alert("You must be logged in to access this page");
+            navigate("/")
+        }
+    })
 
     const getPostsLikes = () => {
         const newPostsLikes = {}
@@ -40,7 +43,6 @@ export const Timeline = () => {
             request.then((res)=>{
                 newPostsLikes[post.id] = res.data.map(user => user.id)
             }).catch(error => {
-                    alert("Algo deu errado e a culpa é nossa. =/");
                 console.log(error);
             })
         })
@@ -59,11 +61,15 @@ export const Timeline = () => {
     }
 
     const getPosts = async () => {
+        if (token === null) return "You must be logged in to access this page"
+
         try {
             const res = await axios.get(`${BASE_URL}/timeline`, config);
             setPosts(res.data);
         } catch (error) {
             setErrorMessage(true);
+            alert("You must login to access this page");
+            navigate("/");
         }
     };
 
@@ -85,7 +91,6 @@ export const Timeline = () => {
                 getPostsLikes();
             });
         request.catch((err) => {
-            alert("Algo deu errado e a culpa é nossa. =/");
             console.log(err);
         });
     }
@@ -109,11 +114,11 @@ export const Timeline = () => {
 
         const descriptionWords = text.split(" ")
 
-        descriptionWords.map((w) => {
+        descriptionWords.forEach((w) => {
             if (w.includes("#")) {
                 addHashtag(w.replace("#", ""), post_id)
             }
-        })
+        });
     }
 
     const submitNewDesc = async (id, text, onErrorFn) => {
@@ -270,7 +275,7 @@ export const Timeline = () => {
         try {
             const res = await axios.post(`${BASE_URL}/timeline`, form, config);
 
-            descriptionWords.map((w) => {
+            descriptionWords.forEach((w) => {
                 if (w.includes("#")) {
                     addHashtag(w.replace("#", ""), res.data.post_id)
                 }
@@ -379,6 +384,7 @@ export const Timeline = () => {
     );
 };
 
+//Styled Components
 const StyledLink = styled(Link)`
     text-decoration: none;
     color: #FFFFFF;

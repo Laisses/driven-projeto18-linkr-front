@@ -5,14 +5,13 @@ import axios from "axios";
 import { useContext } from "react";
 import styled from "styled-components"
 import { BASE_URL } from "../constants/url";
-import MyContext from "../contexts/MyContext";
+import { MyContext } from "../contexts/MyContext";
 
 export default function SignIn() {
-    const { token } = useContext(MyContext)
+    const { setToken, setData } = useContext(MyContext)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
-    const { setData } = useContext(MyContext)
     const [disable, setDisable] = useState(false)
 
     function sign_in(e) {
@@ -30,9 +29,11 @@ export default function SignIn() {
         const promise = axios.post(`${BASE_URL}/signin`, body)
         promise.then(res => {
             localStorage.setItem("token", res.data.token)
+            setToken(res.data.token)
 
             const dataObj = JSON.stringify(res.data)
             localStorage.setItem("data", dataObj)
+            setData(res.data)
 
             navigate("/timeline")
         })
