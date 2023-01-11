@@ -2,6 +2,7 @@ import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { TiDelete, TiPencil, TiTrash } from "react-icons/ti";
+import { BiRepost } from "react-icons/bi";
 import { useContext, useEffect, useState } from "react";
 import MyContext from '../contexts/MyContext';
 import TrendingList from "../components/trending";
@@ -210,9 +211,17 @@ export const Timeline = () => {
                     getPosts()
                     likeHandler(id)
                     }}>
-                    {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                    {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"20px"} /> : <IoIosHeartEmpty size={"20px"} />}
                     <LikeText>{`${likes.length} likes`}</LikeText>
                 </LikeIcon>
+                <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
+                <ShareIcon id={`anchor-element${id}`} onClick={()=>{
+                    getPosts()
+                    likeHandler(id)
+                    }}>
+                    {likes.filter(like => like.user_id === data.user.id).length ? <BiRepost color="red" size={"20px"} /> : <BiRepost size={"20px"} />}
+                    <ShareText>{`${likes.length} re-posts`}</ShareText>
+                </ShareIcon>
                 <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
             </PostsContainer>
         );
@@ -638,7 +647,7 @@ const LikeIcon = styled.div`
     flex-direction: column;
     align-items: center;
     top: 30%;
-    left: 25px;
+    left: 18px;
     width: auto;
     height: auto;
     gap: 5px;
@@ -652,8 +661,31 @@ const LikeText = styled.span`
     line-height: 13px;
     text-align: center;
     color: #FFFFFF;
-    width: 35px;
-`
+    width: 50px;
+`;
+
+const ShareIcon = styled.div`
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    top: 65%;
+    left: 18px;
+    width: auto;
+    height: auto;
+    gap: 5px;
+`;
+
+const ShareText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 50px;
+`;
 
 const ModalContainer = styled.div`
     display: flex;
