@@ -1,6 +1,7 @@
 import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
+import { AiOutlineComment } from 'react-icons/ai'
 import { TiPencil, TiTrash } from "react-icons/ti";
 import { useContext, useEffect, useState } from "react";
 import { MyContext } from "../contexts/MyContext";
@@ -27,6 +28,7 @@ export const Timeline = () => {
     const [errorMessage, setErrorMessage] = useState(false);
     const [postsLikesUserId, setPostsLikesUserId] = useState([])
     const navigate = useNavigate()
+    const [isCommentOpen, setIsCommentOpen] = useState(false)
 
     useEffect(() => {
         if (token === null) {
@@ -124,6 +126,15 @@ export const Timeline = () => {
         });
     }
 
+    const showComment = () => {
+        if (!isCommentOpen) {
+            setIsCommentOpen(true)
+        } else {
+            setIsCommentOpen(false)
+        }
+        console.log(isCommentOpen)
+    }
+
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
             await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
@@ -160,10 +171,24 @@ export const Timeline = () => {
 
         return (
             <PostsContainer>
-                <ProfilePicture
-                    src={u.photo}
-                    alt="profile picture"
-                />
+                <LeftPart>
+                    <ProfilePicture
+                        src={u.photo}
+                        alt="profile picture"
+                    />
+
+                    <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
+                        {postsLikesUserId[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                        <LikeText>{`${likes} likes`}</LikeText>
+                    </LikeIcon>
+                    <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(post)}</Tooltip>
+
+                    <CommentIcon>
+                        <AiOutlineComment onClick={() => showComment()}/>
+                        <CommentText>{`${2} comments`}</CommentText>
+                    </CommentIcon>
+                </LeftPart>
+
                 <Post>
                     <PostHeader>
                         <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
@@ -234,15 +259,9 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
-                    {postsLikesUserId[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
-                    <LikeText>{`${likes} likes`}</LikeText>
-                </LikeIcon>
-                <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(post)}</Tooltip>
             </PostsContainer>
         );
     };
-    console.log(postsLikes)
 
     const Posts = () => {
         if (!posts) {
@@ -591,6 +610,37 @@ const Username = styled.div`
     font-size: 19px;
 `;
 
+const LeftPart = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+`
+
+const CommentIcon = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+
+    svg {
+        font-size: 28px;
+        cursor: pointer;
+    }
+`
+
+const CommentText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 60px;
+    cursor: default;
+`
+
 const HeaderIcons = styled.div`
     display: flex;
 `
@@ -662,15 +712,19 @@ const LinkUrl = styled.p`
 `;
 
 const LikeIcon = styled.div`
-    position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 12px;
     top: 30%;
     left: 25px;
     width: auto;
     height: auto;
     gap: 5px;
+
+    svg {
+        cursor: pointer;
+    }
 `;
 
 const LikeText = styled.span`
@@ -682,6 +736,7 @@ const LikeText = styled.span`
     text-align: center;
     color: #FFFFFF;
     width: 35px;
+    cursor: default;
 `
 
 const ModalContainer = styled.div`
@@ -699,8 +754,8 @@ const ModalText = styled.span`
     line-height: 41px;
     text-align: center;
     color: #FFFFFF;
-margin-bottom: 35px;
-margin-top: 10px;
+    margin-bottom: 35px;
+    margin-top: 10px;
 `
 
 const ModalButtons = styled.div`
@@ -735,10 +790,10 @@ const TooltipContainer = styled.div`
 `
 
 const TooltipLike = styled.div`
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
 `
 
 const TooltipImg = styled.img`
