@@ -15,15 +15,16 @@ import ReactModal from "react-modal";
 import { device } from "../constants/device"
 
 
-export const HashtagPage = () => {
+export const UserPage = () => {
     const { config, counter, setCounter, data, token } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [postsLikes, setPostsLikes] = useState([])    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalPostId, setModalPostId] = useState(null);
-    const [errorMessage, setErrorMessage] = useState(false);    
+    const [errorMessage, setErrorMessage] = useState(false);  
+    const [userName, setUserName] = useState("")  
     const navigate = useNavigate()
-    const { hashtag } = useParams()
+    const { userId } = useParams()
 
     useEffect(() => {
         if (token === null) {
@@ -62,7 +63,7 @@ export const HashtagPage = () => {
         if (token === null) return "You must be logged in to access this page"
         
         try {
-            const res = await axios.get(`${BASE_URL}/hashtag/${hashtag}`, config);
+            const res = await axios.get(`${BASE_URL}/user/${userId}`, config);
             setPosts(res.data);
         } catch (error) {
             setErrorMessage(true);
@@ -131,6 +132,7 @@ export const HashtagPage = () => {
 
     const ListofPosts = post => {
         const { id, description, link, user: u } = post;
+        setUserName(u.name)
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
@@ -300,7 +302,7 @@ export const HashtagPage = () => {
             </ReactModal>
             <TimelineBackground>
                 <TimelineContainer>
-                    <Title># {hashtag}</Title>
+                    <Title> {userName}'s posts</Title>
                     
                     {!errorMessage
                         ? <Posts />

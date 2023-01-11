@@ -47,7 +47,7 @@ export default function SignUp() {
                         <input placeholder="password" type="password" onChange={e => body.password = e.target.value} required></input>
                         <input placeholder="username" type="text" onChange={e => body.username = e.target.value} required></input>
                         <input placeholder="picture url" type="text" onChange={e => body.pictureUrl = e.target.value} required></input>
-                        <button type="submit" disabled={disable}>{disable ? "" : "Sign Up"}</button>
+                        <button type="submit" disabled={disable}>{disable ? "Loading..." : "Sign Up"}</button>
                     </form>
                 </ContainerInput>
                 <ContainerSwitch>
@@ -181,8 +181,8 @@ const ContainerInput = styled.div`
     }
 
     :disabled {
-    transform: scale(0.97);
-    opacity: 0.6;
+    transform: scale(0.95);
+    opacity: 0.3;
   }
     }
 `

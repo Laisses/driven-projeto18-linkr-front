@@ -5,14 +5,13 @@ import axios from "axios";
 import { useContext } from "react";
 import styled from "styled-components"
 import { BASE_URL } from "../constants/url";
-import MyContext from "../contexts/MyContext";
+import { MyContext } from "../contexts/MyContext";
 
 export default function SignIn() {
-    const { token } = useContext(MyContext)
+    const { setToken, setData } = useContext(MyContext)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const navigate = useNavigate()
-    const { setData } = useContext(MyContext)
     const [disable, setDisable] = useState(false)
 
     function sign_in(e) {
@@ -30,9 +29,11 @@ export default function SignIn() {
         const promise = axios.post(`${BASE_URL}/signin`, body)
         promise.then(res => {
             localStorage.setItem("token", res.data.token)
+            setToken(res.data.token)
 
             const dataObj = JSON.stringify(res.data)
             localStorage.setItem("data", dataObj)
+            setData(res.data)
 
             navigate("/timeline")
         })
@@ -54,7 +55,7 @@ export default function SignIn() {
                     <form onSubmit={sign_in}>
                         <input placeholder="e-mail" type="email" value={email} onChange={e => setEmail(e.target.value)} required></input>
                         <input placeholder="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required></input>
-                        <button type="submit" disabled={disable}>{disable ? "" : "Log In"}</button>
+                        <button type="submit" disabled={disable}>{disable ? "Loading..." : "Log In"}</button>
                     </form>
                 </ContainerInput>
                 <ContainerSwitch>
@@ -188,8 +189,8 @@ const ContainerInput = styled.div`
     }
 
     :disabled {
-    transform: scale(0.97);
-    opacity: 0.6;
+    transform: scale(0.95);
+    opacity: 0.3;
   }
     }
 `
