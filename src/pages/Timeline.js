@@ -20,13 +20,11 @@ import { device } from "../constants/device";
 export const Timeline = () => {
     const { config, counter, setCounter, data, token } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
-    const [postsLikes, setPostsLikes] = useState([])
     const [form, setForm] = useState({description: "", link: ""});
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalPostId, setModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);
-    const [postsLikesUserId, setPostsLikesUserId] = useState([])
     const navigate = useNavigate()
     const [isCommentOpen, setIsCommentOpen] = useState(false)
 
@@ -36,24 +34,7 @@ export const Timeline = () => {
             navigate("/")
         }
     })
-
-    const getPostsLikes = () => {
-        const newPostsLikes = {}
-        const newPostsLikesUserId = {}
-        const promisses = []
-        posts.forEach( (post) => {
-            const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
-            promisses.push(request)
-            request.then((res)=>{
-                newPostsLikes[post.id] = res.data.map(user => user)
-                newPostsLikesUserId[post.id] = res.data.map(user => user.id)
-            }).catch(error => {
-                console.log(error);
-            })
-        })
-        Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes)).then(()=>setPostsLikesUserId(newPostsLikesUserId))
-    }
-
+    
     const deletePostHandler = async (postId) => {
         try {
             await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
@@ -86,14 +67,10 @@ export const Timeline = () => {
         getPosts();
     }, [setErrorMessage]);
 
-    useEffect(() => {
-        getPostsLikes();
-    }, [posts]);
-
     const likeHandler = (postId) => {
         const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
             request.then((res) => {
-                getPostsLikes();
+                getPosts();
             });
         request.catch((err) => {
             console.log(err);
@@ -145,22 +122,23 @@ export const Timeline = () => {
         }
     };
 
-    const tooltipInfo = (post) => {
-        const result = postsLikes[post.id].map((like) => {
-            return (
-            <TooltipLike key={like.id}>
-            <TooltipImg src={like.photo}/>
-            <TooltipName>{like.name}</TooltipName>
-            </TooltipLike>)
-        }, [])
-        return <TooltipContainer>{result}</TooltipContainer>
-    }
-
     const ListofPosts = post => {
         const { id, description, link, user: u, likes } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
+
+        
+        const tooltipInfo = (likes) => {
+            const result = likes.map((like) => {
+                return (
+                <TooltipLike key={like.user_id}>
+                <TooltipImg src={like.user_photo}/>
+                <TooltipName>{like.user_name}</TooltipName>
+                </TooltipLike>)
+            }, [])
+            return <TooltipContainer>{result}</TooltipContainer>
+        }
 
         //Estilo da hashtag
         const tagStyle = {
@@ -177,11 +155,15 @@ export const Timeline = () => {
                         alt="profile picture"
                     />
 
-                    <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
-                        {postsLikesUserId[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
-                        <LikeText>{`${likes} likes`}</LikeText>
+                    <LikeIcon id={`anchor-element${id}`} onClick={()=>{
+                    getPosts()
+                    likeHandler(id)
+                    }}>
+                        {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                        <LikeText>{`${likes.length} likes`}</LikeText>
                     </LikeIcon>
-                    <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(post)}</Tooltip>
+                    <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
+
 
                     <CommentIcon>
                         <AiOutlineComment onClick={() => showComment()}/>
@@ -268,8 +250,6 @@ export const Timeline = () => {
             return <Message>Loading...</Message>
         } else if (posts.length === 0) {
             return <Message>There are no posts yet</Message>
-        } else if (!Object.keys(postsLikes).length) {
-            return <Message>Loading...</Message>
         } else if (posts) {
             return (
                 <ul>
