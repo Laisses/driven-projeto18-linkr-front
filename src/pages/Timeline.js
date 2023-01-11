@@ -13,7 +13,8 @@ import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
 import { ReactTagify } from "react-tagify"
 import { useNavigate } from "react-router-dom";
-import ReactModal from "react-modal";
+import DeleteReactModal from "react-modal";
+import ShareReactModal from "react-modal";
 import { device } from "../constants/device";
 
 
@@ -21,8 +22,10 @@ export const Timeline = () => {
     const { config, counter, setCounter, data } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [form, setForm] = useState({description: "", link: ""});
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalPostId, setModalPostId] = useState(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteModalPostId, setDeleteModalPostId] = useState(null);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [shareModalPostId, setShareModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);
     const navigate = useNavigate()
@@ -34,8 +37,8 @@ export const Timeline = () => {
     const deletePostHandler = async (postId) => {
         try {
             await axios.delete(`${BASE_URL_LOCAL}/timeline/${postId}`, config);
-            setIsModalOpen(false);
-            setModalPostId(null)
+            setIsDeleteModalOpen(false);
+            setDeleteModalPostId(null)
             getPosts();
         } catch (error) {
             setErrorMessage(true);
@@ -54,6 +57,8 @@ export const Timeline = () => {
     const postRepost = async (postId) => {
             const request = axios.post(`${BASE_URL_LOCAL}/reposts`, {id: postId}, config);
             request.then(()=> {
+                setIsShareModalOpen(false);
+                setShareModalPostId(null)
                 getPosts();
             });
             request.catch ((err) => {
@@ -171,7 +176,7 @@ export const Timeline = () => {
                                 </div>
                                 <div>
                                     <DeleteIcon onClick={() => {
-                                        openModal(id)
+                                        openDeleteModal(id)
                                     }}>
                                         <TiTrash size={"20px"} />
                                     </DeleteIcon>
@@ -232,7 +237,7 @@ export const Timeline = () => {
                 </LikeIcon>
                 <Tooltip anchorId={`anchor-like-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
                 <ShareIcon id={`anchor-share-element${id}`} onClick={()=>{
-                    postRepost(id)
+                    openShareModal(id)
                     }}>
                     <BiRepost size={"20px"} />
                     <ShareText>{`${reposts.length} re-posts`}</ShareText>
@@ -299,20 +304,29 @@ export const Timeline = () => {
         }
     };
 
-    const openModal = (id) => {
-        setIsModalOpen(true)
-        setModalPostId(id)
+    const openDeleteModal = (id) => {
+        setIsDeleteModalOpen(true)
+        setDeleteModalPostId(id)
     }
 
-    const closeModal = () => {
-        setIsModalOpen(false)
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false)
+    }
+
+    const openShareModal = (id) => {
+        setIsShareModalOpen(true)
+        setShareModalPostId(id)
+    }
+
+    const closeShareModal = () => {
+        setIsShareModalOpen(false)
     }
 
     return (
         <>
             <Header />
-            <ReactModal
-                    isOpen={isModalOpen}
+            <DeleteReactModal
+                    isOpen={isDeleteModalOpen}
                     contentLabel="Minimal Modal Example"
                     style={{overlay: {
                         position: 'fixed',
@@ -343,11 +357,48 @@ export const Timeline = () => {
                     <ModalContainer>
                         <ModalText>Are you sure you want to delete this post?</ModalText>
                         <ModalButtons>
-                        <ModalButtonCancel onClick={closeModal}>Cancelar</ModalButtonCancel>
-                        <ModalButtonConrfirm onClick={() => deletePostHandler(modalPostId)}>Confirmar</ModalButtonConrfirm>
+                        <ModalButtonCancel onClick={closeDeleteModal}>Cancelar</ModalButtonCancel>
+                        <ModalButtonConrfirm onClick={() => deletePostHandler(deleteModalPostId)}>Confirmar</ModalButtonConrfirm>
                         </ModalButtons>
                     </ModalContainer>
-            </ReactModal>
+            </DeleteReactModal>
+            <ShareReactModal
+                    isOpen={isShareModalOpen}
+                    contentLabel="Minimal Modal Example"
+                    style={{overlay: {
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+                      },
+                      content: {
+                        position: 'absolute',
+                        width: '497px',
+                        height: '262px',
+                        top: '30%',
+                        bottom: '30%',
+                        left: '30%',
+                        right: '30%',
+                        border: '1px solid #333333',
+                        background: '#333333',
+                        overflow: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        borderRadius: '50px',
+                        outline: 'none',
+                        padding: '20px',
+
+                      }}}
+                >
+                    <ModalContainer>
+                        <ModalText>Are you sure you want to re-post this post?</ModalText>
+                        <ModalButtons>
+                        <ModalButtonCancel onClick={closeShareModal}>Cancelar</ModalButtonCancel>
+                        <ModalButtonConrfirm onClick={() => postRepost(shareModalPostId)}>Confirmar</ModalButtonConrfirm>
+                        </ModalButtons>
+                    </ModalContainer>
+            </ShareReactModal>
             <TimelineBackground>
                 <TimelineContainer>
                     <Title>timeline</Title>
