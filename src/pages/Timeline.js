@@ -51,6 +51,14 @@ export const Timeline = () => {
         }
     };
 
+    const postRepost = async () => {
+        try {
+            await axios.post(`${BASE_URL}/reposts`, config);
+        } catch (error) {
+            setErrorMessage(true);
+        }
+    }
+
     const openNewTab = url => {
         window.open(url, '_blank').focus();
     };
@@ -107,11 +115,17 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u, likes } = post;
+        const { id, description, link, user: u, likes, rePosts } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
 
+        // rePosts = [{
+        //     id,
+        //     user_id,
+        //     post_id,
+        //     createdAt
+        // }]
         
         const tooltipInfo = (likes) => {
             const result = likes.map((like) => {
@@ -216,11 +230,11 @@ export const Timeline = () => {
                 </LikeIcon>
                 <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
                 <ShareIcon id={`anchor-element${id}`} onClick={()=>{
+                    postRepost()
                     getPosts()
-                    likeHandler(id)
                     }}>
-                    {likes.filter(like => like.user_id === data.user.id).length ? <BiRepost color="red" size={"20px"} /> : <BiRepost size={"20px"} />}
-                    <ShareText>{`${likes.length} re-posts`}</ShareText>
+                    <BiRepost size={"20px"} />
+                    <ShareText>{`${rePosts.length} re-posts`}</ShareText>
                 </ShareIcon>
                 <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
             </PostsContainer>
