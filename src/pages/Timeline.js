@@ -123,17 +123,10 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u, likes, reposts } = post;
+        const { id, description, link, user: u, likes, reposts, repostedBy, isRepost } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
-
-        // rePosts = [{
-        //     id,
-        //     user_id,
-        //     post_id,
-        //     createdAt
-        // }]
         
         const tooltipLikesInfo = (likes) => {
             const result = likes.map((like) => {
@@ -154,7 +147,15 @@ export const Timeline = () => {
         };
 
         return (
-            <PostsContainer>
+            <AllPost>
+                {isRepost ? 
+                <RepostContainer>
+                    <BiRepost size={"20px"} color="white"/>
+                    <RepostText>Re-posted by {repostedBy}</RepostText>
+                </RepostContainer>
+                :
+                <></>}
+                <PostsContainer>
                 <ProfilePicture
                     src={u.photo}
                     alt="profile picture"
@@ -244,7 +245,8 @@ export const Timeline = () => {
                 </ShareIcon>
                 <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
             </PostsContainer>
-        );
+            </AllPost>
+            );
     };
 
     const Posts = () => {
@@ -608,7 +610,6 @@ const PostsContainer = styled.div`
     width: 611px;
     height: 276px;
     padding: 16px;
-    margin-top: 16px;
     border-radius: 16px;
     color: #ffffff;
     background-color: #171717;
@@ -768,8 +769,8 @@ const ModalText = styled.span`
     line-height: 41px;
     text-align: center;
     color: #FFFFFF;
-margin-bottom: 35px;
-margin-top: 10px;
+    margin-bottom: 35px;
+    margin-top: 10px;
 `
 
 const ModalButtons = styled.div`
@@ -818,6 +819,40 @@ const TooltipImg = styled.img`
 
 const TooltipName = styled.span`
     font-family: 'Lato', sans-serif;
+    font-size: 11px;
+    line-height: 13px;
     text-align: center;
     color: #FFFFFF;
+`
+
+const RepostContainer = styled.div`
+    top: -33px;
+    right: 0;
+    display: flex;
+    background-color: #1E1E1E;
+    border-radius: 16px;
+    height: 49px;
+    width: 611px;
+    padding-left: 18px;
+    padding-top: 13px;
+`
+
+const RepostText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;  
+    text-align: center;
+    margin-left: 10px;
+    color: #FFFFFF;
+`
+
+const AllPost = styled.div`
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    background-color: #1E1E1E;
+    margin-top: 33px;
 `
