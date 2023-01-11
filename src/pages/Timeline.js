@@ -1,4 +1,4 @@
-import { BASE_URL } from "../constants/url";
+import { BASE_URL_LOCAL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { TiDelete, TiPencil, TiTrash } from "react-icons/ti";
@@ -33,7 +33,7 @@ export const Timeline = () => {
 
     const deletePostHandler = async (postId) => {
         try {
-            await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
+            await axios.delete(`${BASE_URL_LOCAL}/timeline/${postId}`, config);
             setIsModalOpen(false);
             setModalPostId(null)
             getPosts();
@@ -44,19 +44,22 @@ export const Timeline = () => {
 
     const getPosts = async () => {
         try {
-            const res = await axios.get(`${BASE_URL}/timeline`, config);
+            const res = await axios.get(`${BASE_URL_LOCAL}/timeline`, config);
             setPosts(res.data);
         } catch (error) {
             setErrorMessage(true);
         }
     };
 
-    const postRepost = async () => {
-        try {
-            await axios.post(`${BASE_URL}/reposts`, config);
-        } catch (error) {
-            setErrorMessage(true);
-        }
+    const postRepost = async (postId) => {
+            const request = axios.post(`${BASE_URL_LOCAL}/reposts`, {id: postId}, config);
+            request.then(()=> {
+                getPosts();
+            });
+            request.catch ((err) => {
+                alert("Algo deu errado e a culpa é nossa. =/");
+                console.log(err);
+        });
     }
 
     const openNewTab = url => {
@@ -68,8 +71,8 @@ export const Timeline = () => {
     }, [setErrorMessage]);
 
     const likeHandler = (postId) => {
-        const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
-            request.then((res) => {
+        const request = axios.post(`${BASE_URL_LOCAL}/likes`, {id: postId}, config);
+            request.then(() => {
                 getPosts();
             });
         request.catch((err) => {
@@ -80,7 +83,7 @@ export const Timeline = () => {
 
     const addHashtag = async (name, post_id) => {
         try {
-            await axios.post(`${BASE_URL}/hashtag`, { name, post_id }, config);
+            await axios.post(`${BASE_URL_LOCAL}/hashtag`, { name, post_id }, config);
             setCounter(counter + 1)
         } catch (err) {
             console.log(err);
@@ -89,7 +92,7 @@ export const Timeline = () => {
 
     const editHashtag = async (post_id, text) => {
         try {
-            await axios.delete(`${BASE_URL}/hashtag/${post_id}`, config);
+            await axios.delete(`${BASE_URL_LOCAL}/hashtag/${post_id}`, config);
             setCounter(counter + 1)
         } catch (err) {
             console.log(err);
@@ -106,7 +109,7 @@ export const Timeline = () => {
 
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
-            await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
+            await axios.put(`${BASE_URL_LOCAL}/timeline`, {post_id: id, description: text}, config);
             getPosts();
         } catch (err) {
             alert("Sorry! Something went wrong, please try again later!")
@@ -115,7 +118,7 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u, likes, rePosts } = post;
+        const { id, description, link, user: u, likes, reposts } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
@@ -127,7 +130,7 @@ export const Timeline = () => {
         //     createdAt
         // }]
         
-        const tooltipInfo = (likes) => {
+        const tooltipLikesInfo = (likes) => {
             const result = likes.map((like) => {
                 return (
                 <TooltipLike key={like.user_id}>
@@ -221,22 +224,20 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon id={`anchor-element${id}`} onClick={()=>{
-                    getPosts()
+                <LikeIcon id={`anchor-like-element${id}`} onClick={()=>{
                     likeHandler(id)
                     }}>
                     {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"20px"} /> : <IoIosHeartEmpty size={"20px"} />}
                     <LikeText>{`${likes.length} likes`}</LikeText>
                 </LikeIcon>
-                <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
-                <ShareIcon id={`anchor-element${id}`} onClick={()=>{
-                    postRepost()
-                    getPosts()
+                <Tooltip anchorId={`anchor-like-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
+                <ShareIcon id={`anchor-share-element${id}`} onClick={()=>{
+                    postRepost(id)
                     }}>
                     <BiRepost size={"20px"} />
-                    <ShareText>{`${rePosts.length} re-posts`}</ShareText>
+                    <ShareText>{`${reposts.length} re-posts`}</ShareText>
                 </ShareIcon>
-                <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
+                <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
             </PostsContainer>
         );
     };
@@ -281,7 +282,7 @@ export const Timeline = () => {
         }
 
         try {
-            const res = await axios.post(`${BASE_URL}/timeline`, form, config);
+            const res = await axios.post(`${BASE_URL_LOCAL}/timeline`, form, config);
 
             descriptionWords.map((w) => {
                 if (w.includes("#")) {
@@ -661,7 +662,7 @@ const LikeIcon = styled.div`
     flex-direction: column;
     align-items: center;
     top: 30%;
-    left: 18px;
+    left: 17px;
     width: auto;
     height: auto;
     gap: 5px;
@@ -684,7 +685,7 @@ const ShareIcon = styled.div`
     flex-direction: column;
     align-items: center;
     top: 65%;
-    left: 18px;
+    left: 17px;
     width: auto;
     height: auto;
     gap: 5px;
