@@ -1,4 +1,4 @@
-import { BASE_URL_LOCAL } from "../constants/url";
+import { BASE_URL_LOCAL, BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { IoPaperPlaneOutline } from "react-icons/io5"
@@ -212,7 +212,7 @@ export const Timeline = () => {
                             {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                             <LikeText>{`${likes.length} likes`}</LikeText>
                         </LikeIcon>
-                        <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
+                        <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
 
 
                         <CommentIcon>
@@ -246,7 +246,7 @@ export const Timeline = () => {
                                     </div>
                                     <div>
                                         <DeleteIcon onClick={() => {
-                                            openModal(id)
+                                            openDeleteModal(id)
                                         }}>
                                             <TiTrash size={"20px"} />
                                         </DeleteIcon>
