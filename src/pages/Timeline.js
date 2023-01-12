@@ -51,9 +51,7 @@ export const Timeline = () => {
         if (token === null) return "You must be logged in to access this page"
 
         try {
-            //LEMBRAR DE TIRAR O LOCALHOST
-            const res = await axios.get(`http://localhost:5000/timeline`, config);
-            console.log(res.data)
+            const res = await axios.get(`${BASE_URL}/timeline`, config);
             setPosts(res.data);
         } catch (error) {
             setErrorMessage(true);
@@ -119,9 +117,8 @@ export const Timeline = () => {
     }
 
     const postComment = async (comment, postId, userId) => {
-        //TROCAR O LOCALHOST PELO NORMAL
         try {
-            await axios.post(`http://localhost:5000/comments`, {comment, postId, userId}, config);
+            await axios.post(`${BASE_URL}/comments`, {comment, postId, userId}, config);
             getPosts()
         } catch (error) {
             console.log(error)
