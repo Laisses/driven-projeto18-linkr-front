@@ -1,7 +1,9 @@
-import { BASE_URL_LOCAL } from "../constants/url";
+import { BASE_URL_LOCAL, BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
-import { TiDelete, TiPencil, TiTrash } from "react-icons/ti";
+import { IoPaperPlaneOutline } from "react-icons/io5"
+import { AiOutlineComment } from 'react-icons/ai'
+import { TiPencil, TiTrash } from "react-icons/ti";
 import { BiRepost } from "react-icons/bi";
 import { useContext, useEffect, useState } from "react";
 import { MyContext } from "../contexts/MyContext";
@@ -28,7 +30,8 @@ export const Timeline = () => {
     const [shareModalPostId, setShareModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);
-    const navigate = useNavigate()
+    const navigate = useNavigate();
+    const [clickedPosts, setClickedPosts] = useState([]);
 
     useEffect(() => {
         if (token === null) {
@@ -118,6 +121,27 @@ export const Timeline = () => {
         });
     }
 
+    const showComment = (id) => {
+        if (!clickedPosts.includes(id)) {
+            let newArray = [...clickedPosts, id]
+            setClickedPosts(newArray)
+        }
+
+        if (clickedPosts.includes(id)) {
+            let newArray = clickedPosts.filter(postId => postId !== id)
+            setClickedPosts(newArray)
+        }
+    }
+
+    const postComment = async (comment, postId, userId) => {
+        try {
+            await axios.post(`${BASE_URL}/comments`, {comment, postId, userId}, config);
+            getPosts()
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
             await axios.put(`${BASE_URL_LOCAL}/timeline`, {post_id: id, description: text}, config);
@@ -129,17 +153,18 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u, likes, reposts, repostedBy, isRepost } = post;
+        const { id, description, link, user: u, likes, comments, reposts, repostedBy, isRepost } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
-        
+        const [comment, setComment] = useState("");
+              
         const tooltipLikesInfo = (likes) => {
             const result = likes.map((like) => {
                 return (
                 <TooltipLike key={like.user_id}>
-                <TooltipImg src={like.user_photo}/>
-                <TooltipName>{like.user_name}</TooltipName>
+                    <TooltipImg src={like.user_photo}/>
+                    <TooltipName>{like.user_name}</TooltipName>
                 </TooltipLike>)
             }, [])
             return <TooltipContainer>{result}</TooltipContainer>
@@ -152,107 +177,159 @@ export const Timeline = () => {
             cursor: 'pointer'
         };
 
+        //Ordenando comentários pela data de criação
+        comments.sort(function (x, y) {
+            let a = new Date(x.time),
+                b = new Date(y.time);
+            
+            return a - b
+        })
+
         return (
-            <AllPost>
-                {isRepost ? 
-                <RepostContainer>
-                    <BiRepost size={"20px"} color="white"/>
-                    <RepostText>Re-posted by {repostedBy}</RepostText>
-                </RepostContainer>
-                :
-                <></>}
+            <PostBackground>
+            <AllPost/>
+                {isRepost 
+                  ? 
+                  <RepostContainer>
+                      <BiRepost size={"20px"} color="white"/>
+                      <RepostText>Re-posted by {repostedBy}</RepostText>
+                  </RepostContainer>
+                  :
+                  <></>
+                }
+                
                 <PostsContainer>
-                <ProfilePicture
-                    src={u.photo}
-                    alt="profile picture"
-                />
-                <Post>
-                    <PostHeader>
-                        <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
-                        {
-                            data.user.id === u.id
-                                ?
-                                <HeaderIcons>
-                                <div>
-                                    <EditIcon onClick={() => {
-                                        setEdit(!edit);
-                                        setText(description);
-                                    }}>
-                                        <TiPencil size={"20px"} />
-                                    </EditIcon>
-                                </div>
-                                <div>
-                                    <DeleteIcon onClick={() => {
-                                        openDeleteModal(id)
-                                    }}>
-                                        <TiTrash size={"20px"} />
-                                    </DeleteIcon>
-                                </div>
-                                </HeaderIcons>
-                                :
-                                <></>
-                        }
-                    </PostHeader>
-                    {
-                        !edit
-                            ?
-                            <ReactTagify
-                                tagStyle={tagStyle}
-                                tagClicked={(tag) => {
-                                    navigate(`/hashtag/${tag.replace('#', '')}`)
-                                }}
-                            >
-                                <Description>{description}</Description>
-                            </ReactTagify>
-                            :
-                            <EditInput
-                                id="edit"
-                                name="edit"
-                                value={text}
-                                onChange={e => setText(e.target.value)}
-                                disabled={editing}
-                                autoFocus={true}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        editHashtag(id, text)
-                                        setEditing(true);
-                                        submitNewDesc(id, text, () => setEditing(false));
-                                    } else if (e.key === "Escape") {
-                                        setEdit(false);
-                                        setText(description);
-                                    }
-                                }}
-                            />
-                    }
-                    <LinkContainer>
-                        <LinkMetaData onClick={() => openNewTab(link.address)}>
-                            <LinkTitle>{link.title}</LinkTitle>
-                            <LinkDescription>{link.hint}</LinkDescription>
-                            <LinkUrl>{link.address}</LinkUrl>
-                        </LinkMetaData>
-                        <LinkImage
-                            src={link.image}
-                            alt="icon of text"
+                    <LeftPart>
+                        <ProfilePicture
+                            src={u.photo}
+                            alt="profile picture"
                         />
-                    </LinkContainer>
-                </Post>
-                <LikeIcon id={`anchor-like-element${id}`} onClick={()=>{
-                    likeHandler(id)
-                    }}>
-                    {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"20px"} /> : <IoIosHeartEmpty size={"20px"} />}
-                    <LikeText>{`${likes.length} likes`}</LikeText>
-                </LikeIcon>
-                <Tooltip anchorId={`anchor-like-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
-                <ShareIcon id={`anchor-share-element${id}`} onClick={()=>{
-                    openShareModal(id)
-                    }}>
-                    <BiRepost size={"20px"} />
-                    <ShareText>{`${reposts.length} re-posts`}</ShareText>
-                </ShareIcon>
-                <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
-            </PostsContainer>
-            </AllPost>
-            );
+
+                        <LikeIcon id={`anchor-element${id}`} onClick={()=>{
+                            getPosts()
+                            likeHandler(id)
+                        }}>
+                            {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                            <LikeText>{`${likes.length} likes`}</LikeText>
+                        </LikeIcon>
+                        <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
+
+
+                        <CommentIcon>
+                            <AiOutlineComment onClick={() => showComment(id)}/>
+                            <CommentText>{`${comments.length} comments`}</CommentText>
+                        </CommentIcon>
+                        
+                        <ShareIcon id={`anchor-share-element${id}`} onClick={()=>{
+                            openShareModal(id)
+                            }}>
+                            <BiRepost size={"20px"} />
+                            <ShareText>{`${reposts.length} re-posts`}</ShareText>
+                        </ShareIcon>
+                        <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
+                    </LeftPart>
+
+                    <Post>
+                        <PostHeader>
+                            <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
+                            {
+                                data.user.id === u.id
+                                    ?
+                                    <HeaderIcons>
+                                    <div>
+                                        <EditIcon onClick={() => {
+                                            setEdit(!edit);
+                                            setText(description);
+                                        }}>
+                                            <TiPencil size={"20px"} />
+                                        </EditIcon>
+                                    </div>
+                                    <div>
+                                        <DeleteIcon onClick={() => {
+                                            openDeleteModal(id)
+                                        }}>
+                                            <TiTrash size={"20px"} />
+                                        </DeleteIcon>
+                                    </div>
+                                    </HeaderIcons>
+                                    :
+                                    <></>
+                            }
+                        </PostHeader>
+                        
+                        {
+                            !edit
+                                ?
+                                <ReactTagify
+                                    tagStyle={tagStyle}
+                                    tagClicked={(tag) => {
+                                        navigate(`/hashtag/${tag.replace('#', '')}`)
+                                    }}
+                                >
+                                    <Description>{description}</Description>
+                                </ReactTagify>
+                                :
+                                <EditInput
+                                    id="edit"
+                                    name="edit"
+                                    value={text}
+                                    onChange={e => setText(e.target.value)}
+                                    disabled={editing}
+                                    autoFocus={true}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            editHashtag(id, text)
+                                            setEditing(true);
+                                            submitNewDesc(id, text, () => setEditing(false));
+                                        } else if (e.key === "Escape") {
+                                            setEdit(false);
+                                            setText(description);
+                                        }
+                                    }}
+                                />
+                        }
+                        <LinkContainer>
+                            <LinkMetaData onClick={() => openNewTab(link.address)}>
+                                <LinkTitle>{link.title}</LinkTitle>
+                                <LinkDescription>{link.hint}</LinkDescription>
+                                <LinkUrl>{link.address}</LinkUrl>
+                            </LinkMetaData>
+                            <LinkImage
+                                src={link.image}
+                                alt="icon of text"
+                            />
+                        </LinkContainer>
+                    </Post>
+                </PostsContainer>
+
+                <CommentContainer isOpen={clickedPosts.includes(id)}>
+                    {
+                        comments.map((c, idx) => 
+                                <li key={idx}>
+                                    <img src={c.user_photo} alt='user picture'/>
+
+                                    <div>
+                                        {u.id === c.user_id
+                                            ? 
+                                        <h1>{c.user_name} <span>• post’s author</span></h1>
+                                            : 
+                                        <h1>{c.user_name}</h1>
+                                        }
+
+                                        <span>{c.comment}</span>
+                                    </div>
+                                </li>
+                           )
+                    }
+
+                    <PostCommentContainer>
+                        <img src={data.user.photo} alt="user picture"/>
+                        <input placeholder="write a comment..." onChange={(e) => {setComment(e.target.value)}}/>
+                        <IoPaperPlaneOutline onClick={() => postComment(comment, id, data.user.id)}/>
+                    </PostCommentContainer>
+                </CommentContainer>
+        </PostBackground>
+        );
     };
 
     const Posts = () => {
@@ -612,6 +689,11 @@ const Button = styled.button`
     cursor: pointer;
 `;
 
+const PostBackground = styled.div`
+    background-color: #1E1E1E;
+    border-radius: 16px;
+`;
+
 const PostsContainer = styled.div`
     position: relative;
     width: 611px;
@@ -645,16 +727,141 @@ const Username = styled.div`
     font-size: 19px;
 `;
 
+const CommentContainer = styled.ul`
+    display: ${props => props.isOpen ? 'flex' : 'none'};
+    flex-direction: column;
+    width: 611px;
+    height: auto;
+    background: #1E1E1E;
+    border-radius: 16px 16px 16px 16px;
+    padding: 25px 25px;
+
+    li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #353535;
+        padding: 0 0 16px 0;
+
+        div {
+            margin-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+
+            h1 {
+                font-family: 'Lato';
+                font-style: normal;
+                font-weight: 700;
+                font-size: 14px;
+                line-height: 17px;
+                color: #F3F3F3;
+            }
+
+            span {
+                font-family: 'Lato';
+                font-style: normal;
+                font-weight: 400;
+                font-size: 14px;
+                line-height: 17px;
+                color: #ACACAC;
+            }
+        }
+
+        img {
+            height: 40px;
+            width: 40px;
+            border-radius: 26.5px;
+        }
+    }
+`;
+
+const PostCommentContainer = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+
+    img {
+        height: 40px;
+        width: 40px;
+        border-radius: 26.5px;
+        margin-right: 14px;
+    }
+
+    svg {
+        position: absolute;
+        color: #ffffff;
+        right: 12.5px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    input {
+        border: none;
+        padding: 11px 15px;
+        width: 510px;
+        height: 40px;
+        background: #252525;
+        border-radius: 8px;
+        font-family: 'Lato';
+        font-style: italic;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 17px;
+        letter-spacing: 0.05em;
+        color: #ffffff;
+
+        ::placeholder {
+            color: #575757;
+        }
+    }
+`
+
+const LeftPart = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+`;
+
+const CommentIcon = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+
+    svg {
+        font-size: 28px;
+        cursor: pointer;
+    }
+`;
+
+const CommentText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 60px;
+    cursor: default;
+`;
+
 const HeaderIcons = styled.div`
     display: flex;
-`
+`;
 
 const EditIcon = styled.div`
     width: 24px;
+    cursor: pointer;
 `;
 
 const DeleteIcon = styled.div`
     width: 24px;
+    cursor: pointer;
 `;
 
 const Description = styled.div`
@@ -695,6 +902,7 @@ const LinkTitle = styled.h4`
     color: #CECECE;
     overflow: hidden;
     text-overflow: ellipsis;
+    width: 300px;
 `;
 
 const LinkDescription = styled.p`
@@ -704,6 +912,7 @@ const LinkDescription = styled.p`
     max-height: 30px;
     overflow: hidden;
     text-overflow: ellipsis;
+    width: 300px;
 `;
 
 const LinkUrl = styled.p`
@@ -713,18 +922,23 @@ const LinkUrl = styled.p`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    width: 300px;
 `;
 
 const LikeIcon = styled.div`
-    position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 12px;
     top: 30%;
     left: 17px;
     width: auto;
     height: auto;
     gap: 5px;
+
+    svg {
+        cursor: pointer;
+    }
 `;
 
 const LikeText = styled.span`
@@ -735,7 +949,8 @@ const LikeText = styled.span`
     line-height: 13px;
     text-align: center;
     color: #FFFFFF;
-    width: 50px;
+    width: 35px;
+    cursor: default;
 `;
 
 const ShareIcon = styled.div`
@@ -766,8 +981,7 @@ const ModalContainer = styled.div`
     flex-direction: column;
     justify-content: center;
     align-items: center;
-
-`
+`;
 
 const ModalText = styled.span`
     font-family: 'Lato', sans-serif;
@@ -778,13 +992,13 @@ const ModalText = styled.span`
     color: #FFFFFF;
     margin-bottom: 35px;
     margin-top: 10px;
-`
+`;
 
 const ModalButtons = styled.div`
     width: 100%;
     display: flex;
     justify-content: space-evenly;
-`
+`;
 
 const ModalButtonCancel = styled.button`
     width: 134px;
@@ -794,7 +1008,7 @@ const ModalButtonCancel = styled.button`
     background: #FFFFFF;
     border-radius: 5px;
     border: none;
-`
+`;
 
 const ModalButtonConrfirm = styled.button`
     width: 134px;
@@ -802,27 +1016,27 @@ const ModalButtonConrfirm = styled.button`
     background: #1877F2;
     border-radius: 5px;
     border: none;
-`
+`;
 
 const TooltipContainer = styled.div`
     display: flex;
     flex-direction: column;
     height: auto;
     width: 100px;
-`
+`;
 
 const TooltipLike = styled.div`
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 15px;
-`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+`;
 
 const TooltipImg = styled.img`
     width: 30px;
     height: 30px;
     border-radius: 50%;
-`
+`;
 
 const TooltipName = styled.span`
     font-family: 'Lato', sans-serif;
@@ -853,11 +1067,11 @@ const RepostText = styled.span`
     text-align: center;
     margin-left: 10px;
     color: #FFFFFF;
-`
+`;
 
 const AllPost = styled.div`
     position: relative;
-    display: flex;
+    display: none;
     flex-direction: column;
     border-radius: 16px;
     background-color: #1E1E1E;
