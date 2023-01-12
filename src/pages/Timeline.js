@@ -205,7 +205,7 @@ export const Timeline = () => {
                             alt="profile picture"
                         />
 
-                        <LikeIcon id={`anchor-element${id}`} onClick={()=>{
+                        <LikeIcon id={`anchor-element${id}`}  event={ isRepost ? "none" : "all"} onClick={()=>{
                             getPosts()
                             likeHandler(id)
                         }}>
@@ -220,7 +220,7 @@ export const Timeline = () => {
                             <CommentText>{`${comments.length} comments`}</CommentText>
                         </CommentIcon>
                         
-                        <ShareIcon id={`anchor-share-element${id}`} onClick={()=>{
+                        <ShareIcon event={ isRepost ? "none" : "all"}  id={`anchor-share-element${id}`} onClick={()=>{
                             openShareModal(id)
                             }}>
                             <BiRepost size={"20px"} />
@@ -229,7 +229,7 @@ export const Timeline = () => {
                         <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
                     </LeftPart>
 
-                    <Post>
+                    <Post event={ isRepost ? "none" : "all"}>
                         <PostHeader>
                             <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
                             {
@@ -711,6 +711,7 @@ const PostsContainer = styled.div`
 `;
 
 const Post = styled.li`
+    pointer-events: ${props => props.event};
     font-family: 'Lato', sans-serif;
     font-weight: 400;
     padding-left: 18px;
@@ -935,10 +936,12 @@ const LikeIcon = styled.div`
     width: auto;
     height: auto;
     gap: 5px;
+    pointer-events: ${props => props.event};
 
     svg {
         cursor: pointer;
     }
+
 `;
 
 const LikeText = styled.span`
@@ -963,6 +966,7 @@ const ShareIcon = styled.div`
     width: auto;
     height: auto;
     gap: 5px;
+    pointer-events: ${props => props.event};
 `;
 
 const ShareText = styled.span`
