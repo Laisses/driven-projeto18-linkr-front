@@ -1,9 +1,10 @@
-import { BASE_URL } from "../constants/url";
+import { BASE_URL_LOCAL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { IoPaperPlaneOutline } from "react-icons/io5"
 import { AiOutlineComment } from 'react-icons/ai'
 import { TiPencil, TiTrash } from "react-icons/ti";
+import { BiRepost } from "react-icons/bi";
 import { useContext, useEffect, useState } from "react";
 import { MyContext } from "../contexts/MyContext";
 import TrendingList from "../components/trending";
@@ -14,7 +15,8 @@ import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
 import { ReactTagify } from "react-tagify"
 import { useNavigate } from "react-router-dom";
-import ReactModal from "react-modal";
+import DeleteReactModal from "react-modal";
+import ShareReactModal from "react-modal";
 import { device } from "../constants/device";
 
 
@@ -22,8 +24,10 @@ export const Timeline = () => {
     const { config, counter, setCounter, data, token } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [form, setForm] = useState({description: "", link: ""});
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalPostId, setModalPostId] = useState(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteModalPostId, setDeleteModalPostId] = useState(null);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [shareModalPostId, setShareModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);
     const navigate = useNavigate();
@@ -38,9 +42,9 @@ export const Timeline = () => {
     
     const deletePostHandler = async (postId) => {
         try {
-            await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
-            setIsModalOpen(false);
-            setModalPostId(null)
+            await axios.delete(`${BASE_URL_LOCAL}/timeline/${postId}`, config);
+            setIsDeleteModalOpen(false);
+            setDeleteModalPostId(null)
             getPosts();
         } catch (error) {
             setErrorMessage(true);
@@ -51,7 +55,7 @@ export const Timeline = () => {
         if (token === null) return "You must be logged in to access this page"
 
         try {
-            const res = await axios.get(`${BASE_URL}/timeline`, config);
+            const res = await axios.get(`${BASE_URL_LOCAL}/timeline`, config);
             setPosts(res.data);
         } catch (error) {
             setErrorMessage(true);
@@ -59,6 +63,19 @@ export const Timeline = () => {
             navigate("/");
         }
     };
+
+    const postRepost = async (postId) => {
+            const request = axios.post(`${BASE_URL_LOCAL}/reposts`, {id: postId}, config);
+            request.then(()=> {
+                setIsShareModalOpen(false);
+                setShareModalPostId(null)
+                getPosts();
+            });
+            request.catch ((err) => {
+                alert("Algo deu errado e a culpa é nossa. =/");
+                console.log(err);
+        });
+    }
 
     const openNewTab = url => {
         window.open(url, '_blank').focus();
@@ -69,8 +86,8 @@ export const Timeline = () => {
     }, [setErrorMessage]);
 
     const likeHandler = (postId) => {
-        const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
-            request.then((res) => {
+        const request = axios.post(`${BASE_URL_LOCAL}/likes`, {id: postId}, config);
+            request.then(() => {
                 getPosts();
             });
         request.catch((err) => {
@@ -80,7 +97,7 @@ export const Timeline = () => {
 
     const addHashtag = async (name, post_id) => {
         try {
-            await axios.post(`${BASE_URL}/hashtag`, { name, post_id }, config);
+            await axios.post(`${BASE_URL_LOCAL}/hashtag`, { name, post_id }, config);
             setCounter(counter + 1)
         } catch (err) {
             console.log(err);
@@ -89,7 +106,7 @@ export const Timeline = () => {
 
     const editHashtag = async (post_id, text) => {
         try {
-            await axios.delete(`${BASE_URL}/hashtag/${post_id}`, config);
+            await axios.delete(`${BASE_URL_LOCAL}/hashtag/${post_id}`, config);
             setCounter(counter + 1)
         } catch (err) {
             console.log(err);
@@ -127,7 +144,7 @@ export const Timeline = () => {
 
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
-            await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
+            await axios.put(`${BASE_URL_LOCAL}/timeline`, {post_id: id, description: text}, config);
             getPosts();
         } catch (err) {
             alert("Sorry! Something went wrong, please try again later!")
@@ -136,16 +153,16 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u, likes, comments } = post;
+        const { id, description, link, user: u, likes, comments, reposts, repostedBy, isRepost } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
         const [comment, setComment] = useState("");
-
-        const tooltipInfo = (likes) => {
-            const result = likes.map((like, idx) => {
+              
+        const tooltipLikesInfo = (likes) => {
+            const result = likes.map((like) => {
                 return (
-                <TooltipLike key={idx}>
+                <TooltipLike key={like.user_id}>
                     <TooltipImg src={like.user_photo}/>
                     <TooltipName>{like.user_name}</TooltipName>
                 </TooltipLike>)
@@ -170,6 +187,16 @@ export const Timeline = () => {
 
         return (
             <PostBackground>
+                {isRepost 
+                  ? 
+                  <RepostContainer>
+                      <BiRepost size={"20px"} color="white"/>
+                      <RepostText>Re-posted by {repostedBy}</RepostText>
+                  </RepostContainer>
+                  :
+                  <></>
+                }
+                
                 <PostsContainer>
                     <LeftPart>
                         <ProfilePicture
@@ -191,6 +218,14 @@ export const Timeline = () => {
                             <AiOutlineComment onClick={() => showComment(id)}/>
                             <CommentText>{`${comments.length} comments`}</CommentText>
                         </CommentIcon>
+                        
+                        <ShareIcon id={`anchor-share-element${id}`} onClick={()=>{
+                            openShareModal(id)
+                            }}>
+                            <BiRepost size={"20px"} />
+                            <ShareText>{`${reposts.length} re-posts`}</ShareText>
+                        </ShareIcon>
+                        <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
                     </LeftPart>
 
                     <Post>
@@ -220,6 +255,7 @@ export const Timeline = () => {
                                     <></>
                             }
                         </PostHeader>
+                        
                         {
                             !edit
                                 ?
@@ -335,7 +371,7 @@ export const Timeline = () => {
         }
 
         try {
-            const res = await axios.post(`${BASE_URL}/timeline`, form, config);
+            const res = await axios.post(`${BASE_URL_LOCAL}/timeline`, form, config);
 
             descriptionWords.forEach((w) => {
                 if (w.includes("#")) {
@@ -352,20 +388,29 @@ export const Timeline = () => {
         }
     };
 
-    const openModal = (id) => {
-        setIsModalOpen(true)
-        setModalPostId(id)
+    const openDeleteModal = (id) => {
+        setIsDeleteModalOpen(true)
+        setDeleteModalPostId(id)
     }
 
-    const closeModal = () => {
-        setIsModalOpen(false)
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false)
+    }
+
+    const openShareModal = (id) => {
+        setIsShareModalOpen(true)
+        setShareModalPostId(id)
+    }
+
+    const closeShareModal = () => {
+        setIsShareModalOpen(false)
     }
 
     return (
         <>
             <Header />
-            <ReactModal
-                    isOpen={isModalOpen}
+            <DeleteReactModal
+                    isOpen={isDeleteModalOpen}
                     contentLabel="Minimal Modal Example"
                     style={{overlay: {
                         position: 'fixed',
@@ -396,11 +441,48 @@ export const Timeline = () => {
                     <ModalContainer>
                         <ModalText>Are you sure you want to delete this post?</ModalText>
                         <ModalButtons>
-                        <ModalButtonCancel onClick={closeModal}>Cancelar</ModalButtonCancel>
-                        <ModalButtonConrfirm onClick={() => deletePostHandler(modalPostId)}>Confirmar</ModalButtonConrfirm>
+                        <ModalButtonCancel onClick={closeDeleteModal}>Cancelar</ModalButtonCancel>
+                        <ModalButtonConrfirm onClick={() => deletePostHandler(deleteModalPostId)}>Confirmar</ModalButtonConrfirm>
                         </ModalButtons>
                     </ModalContainer>
-            </ReactModal>
+            </DeleteReactModal>
+            <ShareReactModal
+                    isOpen={isShareModalOpen}
+                    contentLabel="Minimal Modal Example"
+                    style={{overlay: {
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+                      },
+                      content: {
+                        position: 'absolute',
+                        width: '497px',
+                        height: '262px',
+                        top: '30%',
+                        bottom: '30%',
+                        left: '30%',
+                        right: '30%',
+                        border: '1px solid #333333',
+                        background: '#333333',
+                        overflow: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        borderRadius: '50px',
+                        outline: 'none',
+                        padding: '20px',
+
+                      }}}
+                >
+                    <ModalContainer>
+                        <ModalText>Are you sure you want to re-post this post?</ModalText>
+                        <ModalButtons>
+                        <ModalButtonCancel onClick={closeShareModal}>Cancelar</ModalButtonCancel>
+                        <ModalButtonConrfirm onClick={() => postRepost(shareModalPostId)}>Confirmar</ModalButtonConrfirm>
+                        </ModalButtons>
+                    </ModalContainer>
+            </ShareReactModal>
             <TimelineBackground>
                 <TimelineContainer>
                     <Title>timeline</Title>
@@ -616,7 +698,6 @@ const PostsContainer = styled.div`
     width: 611px;
     height: 276px;
     padding: 16px;
-    margin-top: 16px;
     border-radius: 16px;
     color: #ffffff;
     background-color: #171717;
@@ -849,7 +930,7 @@ const LikeIcon = styled.div`
     align-items: center;
     margin-top: 12px;
     top: 30%;
-    left: 25px;
+    left: 17px;
     width: auto;
     height: auto;
     gap: 5px;
@@ -869,6 +950,29 @@ const LikeText = styled.span`
     color: #FFFFFF;
     width: 35px;
     cursor: default;
+`;
+
+const ShareIcon = styled.div`
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    top: 65%;
+    left: 17px;
+    width: auto;
+    height: auto;
+    gap: 5px;
+`;
+
+const ShareText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 50px;
 `;
 
 const ModalContainer = styled.div`
@@ -935,6 +1039,40 @@ const TooltipImg = styled.img`
 
 const TooltipName = styled.span`
     font-family: 'Lato', sans-serif;
+    font-size: 11px;
+    line-height: 13px;
     text-align: center;
     color: #FFFFFF;
+`
+
+const RepostContainer = styled.div`
+    top: -33px;
+    right: 0;
+    display: flex;
+    background-color: #1E1E1E;
+    border-radius: 16px;
+    height: 49px;
+    width: 611px;
+    padding-left: 18px;
+    padding-top: 13px;
+`
+
+const RepostText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;  
+    text-align: center;
+    margin-left: 10px;
+    color: #FFFFFF;
 `;
+
+const AllPost = styled.div`
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    background-color: #1E1E1E;
+    margin-top: 33px;
+`
