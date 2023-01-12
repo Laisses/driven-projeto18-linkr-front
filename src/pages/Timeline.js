@@ -166,7 +166,7 @@ export const Timeline = () => {
                     src={u.photo}
                     alt="profile picture"
                 />
-                <Post>
+                <Post event={ isRepost ? "none" : "all"}>
                     <PostHeader>
                         <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
                         {
@@ -236,20 +236,19 @@ export const Timeline = () => {
                         />
                     </LinkContainer>
                 </Post>
-                <LikeIcon id={`anchor-like-element${id}`} onClick={()=>{
+                <LikeIcon id={`anchor-like-element${id}`} event={ isRepost ? "none" : "all"} onClick={()=>{
                     likeHandler(id)
                     }}>
                     {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"20px"} /> : <IoIosHeartEmpty size={"20px"} />}
                     <LikeText>{`${likes.length} likes`}</LikeText>
                 </LikeIcon>
                 <Tooltip anchorId={`anchor-like-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
-                <ShareIcon id={`anchor-share-element${id}`} onClick={()=>{
+                <ShareIcon event={ isRepost ? "none" : "all"} onClick={()=>{
                     openShareModal(id)
                     }}>
                     <BiRepost size={"20px"} />
                     <ShareText>{`${reposts.length} re-posts`}</ShareText>
                 </ShareIcon>
-                <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
             </PostsContainer>
             </AllPost>
             );
@@ -629,6 +628,7 @@ const PostsContainer = styled.div`
 `;
 
 const Post = styled.li`
+    pointer-events: ${props => props.event};
     font-family: 'Lato', sans-serif;
     font-weight: 400;
     padding-left: 18px;
@@ -725,6 +725,7 @@ const LikeIcon = styled.div`
     width: auto;
     height: auto;
     gap: 5px;
+    pointer-events: ${props => props.event};
 `;
 
 const LikeText = styled.span`
@@ -748,6 +749,7 @@ const ShareIcon = styled.div`
     width: auto;
     height: auto;
     gap: 5px;
+    pointer-events: ${props => props.event};
 `;
 
 const ShareText = styled.span`
