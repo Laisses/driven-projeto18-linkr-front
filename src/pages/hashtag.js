@@ -1,6 +1,8 @@
 import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
+import { IoPaperPlaneOutline } from "react-icons/io5"
+import { AiOutlineComment } from 'react-icons/ai'
 import { TiPencil, TiTrash } from "react-icons/ti";
 import { useContext, useEffect, useState } from "react";
 import { MyContext } from "../contexts/MyContext";
@@ -13,16 +15,17 @@ import { ReactTagify } from "react-tagify"
 import { useNavigate, useParams } from "react-router-dom";
 import ReactModal from "react-modal";
 import { device } from "../constants/device"
+import { Link } from "react-router-dom";
 
 
 export const HashtagPage = () => {
     const { config, counter, setCounter, data, token } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
-    const [postsLikes, setPostsLikes] = useState([])    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalPostId, setModalPostId] = useState(null);
-    const [errorMessage, setErrorMessage] = useState(false);    
-    const navigate = useNavigate()
+    const [errorMessage, setErrorMessage] = useState(false);
+    const navigate = useNavigate();
+    const [clickedPosts, setClickedPosts] = useState([]);
     const { hashtag } = useParams()
 
     useEffect(() => {
@@ -31,21 +34,6 @@ export const HashtagPage = () => {
             navigate("/")
         }
     })
-
-    const getPostsLikes = () => {
-        const newPostsLikes = {}
-        const promisses = []
-        posts.forEach( (post) => {
-            const request = axios.get(`${BASE_URL}/likes?post_id=${post.id}`, config);
-            promisses.push(request)
-            request.then((res)=>{
-                newPostsLikes[post.id] = res.data.map(user => user.id)
-            }).catch(error => {
-                console.log(error);
-            })
-        })
-        Promise.all(promisses).then(()=>setPostsLikes(newPostsLikes))
-    }
     
     const deletePostHandler = async (postId) => {
         try {
@@ -79,14 +67,10 @@ export const HashtagPage = () => {
         getPosts();
     }, [setErrorMessage, counter]);    
 
-    useEffect(() => {
-        getPostsLikes();
-    }, [posts]); 
-
     const likeHandler = (postId) => {
         const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
             request.then((res) => {
-                getPostsLikes();
+                getPosts();
             });
         request.catch((err) => {
             console.log(err);
@@ -119,6 +103,18 @@ export const HashtagPage = () => {
         });
     }
 
+    const showComment = (id) => {
+        if (!clickedPosts.includes(id)) {
+            let newArray = [...clickedPosts, id]
+            setClickedPosts(newArray)
+        }
+
+        if (clickedPosts.includes(id)) {
+            let newArray = clickedPosts.filter(postId => postId !== id)
+            setClickedPosts(newArray)
+        }
+    }
+
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
             await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
@@ -130,10 +126,21 @@ export const HashtagPage = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u } = post;
+        const { id, description, link, user: u, likes } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
+
+        const tooltipInfo = (likes) => {
+            const result = likes?.map((like) => {
+                return (
+                <TooltipLike key={like.user_id}>
+                <TooltipImg src={like.user_photo}/>
+                <TooltipName>{like.user_name}</TooltipName>
+                </TooltipLike>)
+            }, [])
+            return <TooltipContainer>{result}</TooltipContainer>
+        }
 
         //Estilo da hashtag
         const tagStyle = {
@@ -142,90 +149,136 @@ export const HashtagPage = () => {
             cursor: 'pointer'
         };
 
-        return (
-            <PostsContainer>
-                <ProfilePicture
-                    src={u.photo}
-                    alt="profile picture"
-                />
-                <Post>
-                    <PostHeader>
-                        <Username>{u.name}</Username>
-                        {
-                            data.user.id === u.id
-                                ?
-                                <HeaderIcons>
-                                <div>
-                                    <EditIcon onClick={() => {
-                                        setEdit(!edit);
-                                        setText(description);
-                                    }}>
-                                        <TiPencil size={"20px"} />
-                                    </EditIcon>
-                                </div>
-                                <div>
-                                    <DeleteIcon onClick={() => {
-                                        openModal(id)
-                                    }}>
-                                        <TiTrash size={"20px"} />
-                                    </DeleteIcon>
-                                </div>
-                                </HeaderIcons>
-                                :
-                                <></>
-                        }
+        const teste =  [
+            {photo: data.user.photo, text: 'qualquer coisa', user: 'esdrinhas'}, 
+            {photo: data.user.photo, text: 'qualquer coisa', user: 'juao'}, 
+            {photo: data.user.photo, text: 'qualquer coisa', user: 'predu'}
+        ]
 
-                    </PostHeader>
-                    {
-                        !edit
-                            ?
-                            <ReactTagify
-                                tagStyle={tagStyle}
-                                tagClicked={(tag) => {
-                                    navigate(`/hashtag/${tag.replace('#', '')}`)
-                                }}
-                            >
-                                <Description>{description}</Description>
-                            </ReactTagify>
-                            :
-                            <EditInput
-                                id="edit"
-                                name="edit"
-                                value={text}
-                                onChange={e => setText(e.target.value)}
-                                disabled={editing}
-                                autoFocus={true}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        editHashtag(id, text)
-                                        setEditing(true);
-                                        submitNewDesc(id, text, () => setEditing(false));
-                                    } else if (e.key === "Escape") {
-                                        setEdit(false);
-                                        setText(description);
-                                    }
-                                }}
+        return (
+             <PostBackground>
+                <PostsContainer>
+                    <LeftPart>
+                        <ProfilePicture
+                            src={u.photo}
+                            alt="profile picture"
+                        />
+
+                        <LikeIcon id={`anchor-element${id}`} onClick={()=>{
+                            getPosts()
+                            likeHandler(id)
+                        }}>
+                            {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                            <LikeText>{`${likes.length} likes`}</LikeText>
+                        </LikeIcon>
+                        <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
+
+
+                        <CommentIcon>
+                            <AiOutlineComment onClick={() => showComment(id)}/>
+                            <CommentText>{`${2} comments`}</CommentText>
+                        </CommentIcon>
+                    </LeftPart>
+
+                    <Post>
+                        <PostHeader>
+                            <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
+                            {
+                                data.user.id === u.id
+                                    ?
+                                    <HeaderIcons>
+                                    <div>
+                                        <EditIcon onClick={() => {
+                                            setEdit(!edit);
+                                            setText(description);
+                                        }}>
+                                            <TiPencil size={"20px"} />
+                                        </EditIcon>
+                                    </div>
+                                    <div>
+                                        <DeleteIcon onClick={() => {
+                                            openModal(id)
+                                        }}>
+                                            <TiTrash size={"20px"} />
+                                        </DeleteIcon>
+                                    </div>
+                                    </HeaderIcons>
+                                    :
+                                    <></>
+                            }
+                        </PostHeader>
+                        {
+                            !edit
+                                ?
+                                <ReactTagify
+                                    tagStyle={tagStyle}
+                                    tagClicked={(tag) => {
+                                        navigate(`/hashtag/${tag.replace('#', '')}`)
+                                    }}
+                                >
+                                    <Description>{description}</Description>
+                                </ReactTagify>
+                                :
+                                <EditInput
+                                    id="edit"
+                                    name="edit"
+                                    value={text}
+                                    onChange={e => setText(e.target.value)}
+                                    disabled={editing}
+                                    autoFocus={true}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            editHashtag(id, text)
+                                            setEditing(true);
+                                            submitNewDesc(id, text, () => setEditing(false));
+                                        } else if (e.key === "Escape") {
+                                            setEdit(false);
+                                            setText(description);
+                                        }
+                                    }}
+                                />
+                        }
+                        <LinkContainer>
+                            <LinkMetaData onClick={() => openNewTab(link.address)}>
+                                <LinkTitle>{link.title}</LinkTitle>
+                                <LinkDescription>{link.hint}</LinkDescription>
+                                <LinkUrl>{link.address}</LinkUrl>
+                            </LinkMetaData>
+                            <LinkImage
+                                src={link.image}
+                                alt="icon of text"
                             />
+                        </LinkContainer>
+                    </Post>
+                </PostsContainer>
+
+                <CommentContainer isOpen={clickedPosts.includes(id)}>
+                    {
+                    teste.map((c, idx) => 
+                            <li key={idx}>
+                                <img src={c.photo} alt='user picture'/>
+
+                                <div>
+                                    {data.user.id !== u.id 
+                                        ? 
+                                    <h1>{c.user} <span>• post’s author</span></h1>
+                                        : 
+                                    <h1>{c.user}</h1>
+                                    }
+
+                                    <span>{c.text}</span>
+                                </div>
+                            </li>
+                        )
                     }
 
-                    <LinkContainer>
-                        <LinkMetaData onClick={() => openNewTab(link.address)}>
-                            <LinkTitle>{link.title}</LinkTitle>
-                            <LinkDescription>{link.hint}</LinkDescription>
-                            <LinkUrl>{link.address}</LinkUrl>
-                        </LinkMetaData>
-                        <LinkImage
-                            src={link.image}
-                            alt="icon of text"
-                        />
-                    </LinkContainer>
-                </Post>
-                <LikeIcon id={`anchor-element${id}`} onClick={()=>likeHandler(id)}>
-                    {postsLikes[id]?.includes(data.user.id) ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
-                </LikeIcon>
-                
-                <Tooltip anchorId={`anchor-element${id}`} content={`postLikes`} place="bottom" />
-            </PostsContainer>
+                    <PostCommentContainer>
+                        <img src={data.user.photo} alt="user picture"/>
+                        <input placeholder="write a comment..."/>
+                        <IoPaperPlaneOutline/>
+                    </PostCommentContainer>
+                </CommentContainer>
+        </PostBackground>
         );
     };
 
@@ -234,15 +287,12 @@ export const HashtagPage = () => {
             return <Message>Loading...</Message>
         } else if (posts.length === 0) {
             return <Message>There are no posts yet</Message>
-        } else if (!Object.keys(postsLikes).length) {
-            return <Message>Loading...</Message>
         } else if (posts) {
             return (
                 <ul>
-                    {posts.map((p, idx) => 
-                        <ListofPosts
-                            key={idx}
-                            {...p}
+                    {posts.map(p => <ListofPosts
+                        key={p.id}
+                        {...p}
                     />)}
                 </ul>
             );
@@ -313,21 +363,32 @@ export const HashtagPage = () => {
     );
 };
 
-
+//Styled Components
+const StyledLink = styled(Link)`
+    text-decoration: none;
+    color: #FFFFFF;
+`
 
 const TimelineBackground = styled.div`
+    background-color: #333333;
     display: flex;
     justify-content: center;
 `;
 
 const TimelineContainer = styled.div`
-    width: 616px;
     margin-right: 50px;
     padding-top: 70px;
+    max-width: 611px;
+    min-width: 611px;
 
-    @media (max-width: 840px) {
-        margin-right: 0px;
-        padding-top: 30px;
+    @media ${device.laptop} {
+        margin-right: 0;
+        min-width: 0;
+    }
+
+    @media ${device.tablet} {
+        width: 100%;
+        min-width: 0;
     }
 `;
 
@@ -337,8 +398,21 @@ const Title = styled.h1`
     color: #ffffff;
     margin-bottom: 43px;
 
-    @media (max-width: 840px) {
-        margin-left: 20px;
+    @media ${device.mobileL} {
+        padding-left: 16px;
+    }
+`;
+
+const PublishContainer = styled.div`
+    height: 209px;
+    padding: 16px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    display: flex;
+    margin-bottom: 30px;
+
+    @media ${device.tablet} {
+        border-radius: 0;
     }
 `;
 
@@ -354,11 +428,61 @@ const ProfilePicture = styled.img`
     border-radius: 50%;
 `;
 
-const EditInput = styled.textarea`
+const Form = styled.form`
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+
+    @media ${device.mobileL} {
+        width: 100%;
+        padding-left: 0;
+    }
+`;
+
+const ProfilePictureForm = styled.img`
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+
+    @media ${device.mobileL} {
+        display: none;
+    }
+`;
+
+const FormTitle = styled.h2`
+    font-family: 'Lato', sans-serif;
+    font-size: 20px;
+    font-weight: 300;
+    color: #707070;
+    padding-top: 6px;
+    padding-bottom: 10px;
+
+    @media ${device.mobileL} {
+        text-align: center;
+    }
+`;
+
+const LinkInput = styled.input`
     font-family: 'Lato', sans-serif;
     font-size: 15px;
     font-weight: 300;
-    width: 503px;
+    height: 30px;
+    border-radius: 3px;
+    background-color: #EFEFEF;
+    border: none;
+    margin-top: 5px;
+    padding-left: 10px;
+    &:focus {
+        outline: none;
+    }
+`;
+
+const TextInput = styled.textarea`
+    font-family: 'Lato', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    height: 66px;
     border-radius: 3px;
     background-color: #EFEFEF;
     border: none;
@@ -369,6 +493,39 @@ const EditInput = styled.textarea`
     &:focus {
         outline: none;
     }
+`;
+
+const EditInput = styled.textarea`
+    font-family: 'Lato', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    border-radius: 3px;
+    background-color: #EFEFEF;
+    border: none;
+    margin-top: 5px;
+    padding-top: 5px;
+    padding-left: 10px;
+    resize: none;
+    &:focus {
+        outline: none;
+    }
+`;
+
+const Button = styled.button`
+    width: 112px;
+    height: 31px;
+    border: none;
+    border-radius: 5px;
+    margin-top: 5px;
+    color: #ffffff;
+    background-color: ${props => !props.disabled ? "#1877F2" : "#1154ab"};
+    align-self: flex-end;
+    cursor: pointer;
+`;
+
+const PostBackground = styled.div`
+    background-color: #1E1E1E;
+    border-radius: 16px;
 `;
 
 const PostsContainer = styled.div`
@@ -405,17 +562,141 @@ const Username = styled.div`
     font-size: 19px;
 `;
 
+const CommentContainer = styled.ul`
+    display: ${props => props.isOpen ? 'flex' : 'none'};
+    flex-direction: column;
+    width: 611px;
+    height: auto;
+    background: #1E1E1E;
+    border-radius: 16px 16px 16px 16px;
+    padding: 25px 25px;
+
+    li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #353535;
+        padding: 0 0 16px 0;
+
+        div {
+            margin-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+
+            h1 {
+                font-family: 'Lato';
+                font-style: normal;
+                font-weight: 700;
+                font-size: 14px;
+                line-height: 17px;
+                color: #F3F3F3;
+            }
+
+            span {
+                font-family: 'Lato';
+                font-style: normal;
+                font-weight: 400;
+                font-size: 14px;
+                line-height: 17px;
+                color: #ACACAC;
+            }
+        }
+
+        img {
+            height: 40px;
+            width: 40px;
+            border-radius: 26.5px;
+        }
+    }
+`;
+
+const PostCommentContainer = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+
+    img {
+        height: 40px;
+        width: 40px;
+        border-radius: 26.5px;
+        margin-right: 14px;
+    }
+
+    svg {
+        position: absolute;
+        color: #ffffff;
+        right: 12.5px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    input {
+        border: none;
+        padding: 11px 15px;
+        width: 510px;
+        height: 40px;
+        background: #252525;
+        border-radius: 8px;
+        font-family: 'Lato';
+        font-style: italic;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 17px;
+        letter-spacing: 0.05em;
+        color: #ffffff;
+
+        ::placeholder {
+            color: #575757;
+        }
+    }
+`
+
+const LeftPart = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+`;
+
+const CommentIcon = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+
+    svg {
+        font-size: 28px;
+        cursor: pointer;
+    }
+`;
+
+const CommentText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 60px;
+    cursor: default;
+`;
+
 const HeaderIcons = styled.div`
     display: flex;
-    gap: 5px;
-`
+`;
 
 const EditIcon = styled.div`
     width: 24px;
+    cursor: pointer;
 `;
 
 const DeleteIcon = styled.div`
     width: 24px;
+    cursor: pointer;
 `;
 
 const Description = styled.div`
@@ -430,10 +711,6 @@ const LinkContainer = styled.div`
     border-radius: 11px;
     margin-top: 10px;
     display: flex;
-
-    @media (max-width: 840px) {
-       height: auto;
-    }
 `;
 
 const LinkMetaData = styled.div`
@@ -460,6 +737,7 @@ const LinkTitle = styled.h4`
     color: #CECECE;
     overflow: hidden;
     text-overflow: ellipsis;
+    width: 300px;
 `;
 
 const LinkDescription = styled.p`
@@ -469,6 +747,7 @@ const LinkDescription = styled.p`
     max-height: 30px;
     overflow: hidden;
     text-overflow: ellipsis;
+    width: 300px;
 `;
 
 const LinkUrl = styled.p`
@@ -478,14 +757,35 @@ const LinkUrl = styled.p`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    width: 300px;
 `;
 
 const LikeIcon = styled.div`
-    position: absolute;
-    top: 36%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 12px;
+    top: 30%;
     left: 25px;
-    width: 30px;
-    height: 30px;
+    width: auto;
+    height: auto;
+    gap: 5px;
+
+    svg {
+        cursor: pointer;
+    }
+`;
+
+const LikeText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 35px;
+    cursor: default;
 `;
 
 const ModalContainer = styled.div`
@@ -493,8 +793,7 @@ const ModalContainer = styled.div`
     flex-direction: column;
     justify-content: center;
     align-items: center;
-
-`
+`;
 
 const ModalText = styled.span`
     font-family: 'Lato', sans-serif;
@@ -503,15 +802,15 @@ const ModalText = styled.span`
     line-height: 41px;
     text-align: center;
     color: #FFFFFF;
-margin-bottom: 35px;
-margin-top: 10px;
-`
+    margin-bottom: 35px;
+    margin-top: 10px;
+`;
 
 const ModalButtons = styled.div`
     width: 100%;
     display: flex;
     justify-content: space-evenly;
-`
+`;
 
 const ModalButtonCancel = styled.button`
     width: 134px;
@@ -521,7 +820,7 @@ const ModalButtonCancel = styled.button`
     background: #FFFFFF;
     border-radius: 5px;
     border: none;
-`
+`;
 
 const ModalButtonConrfirm = styled.button`
     width: 134px;
@@ -529,4 +828,30 @@ const ModalButtonConrfirm = styled.button`
     background: #1877F2;
     border-radius: 5px;
     border: none;
-`
+`;
+
+const TooltipContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    width: 100px;
+`;
+
+const TooltipLike = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+`;
+
+const TooltipImg = styled.img`
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+`;
+
+const TooltipName = styled.span`
+    font-family: 'Lato', sans-serif;
+    text-align: center;
+    color: #FFFFFF;
+`;
