@@ -51,7 +51,9 @@ export const Timeline = () => {
         if (token === null) return "You must be logged in to access this page"
 
         try {
-            const res = await axios.get(`${BASE_URL}/timeline`, config);
+            //LEMBRAR DE TIRAR O LOCALHOST
+            const res = await axios.get(`http://localhost:5000/timeline`, config);
+            console.log(res.data)
             setPosts(res.data);
         } catch (error) {
             setErrorMessage(true);
@@ -120,7 +122,7 @@ export const Timeline = () => {
         //TROCAR O LOCALHOST PELO NORMAL
         try {
             await axios.post(`http://localhost:5000/comments`, {comment, postId, userId}, config);
-            setCounter(counter + 1)
+            getPosts()
         } catch (error) {
             console.log(error)
         }
@@ -137,18 +139,18 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u, likes } = post;
+        const { id, description, link, user: u, likes, comments } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
         const [comment, setComment] = useState("");
 
         const tooltipInfo = (likes) => {
-            const result = likes.map((like) => {
+            const result = likes.map((like, idx) => {
                 return (
-                <TooltipLike key={like.user_id}>
-                <TooltipImg src={like.user_photo}/>
-                <TooltipName>{like.user_name}</TooltipName>
+                <TooltipLike key={idx}>
+                    <TooltipImg src={like.user_photo}/>
+                    <TooltipName>{like.user_name}</TooltipName>
                 </TooltipLike>)
             }, [])
             return <TooltipContainer>{result}</TooltipContainer>
@@ -161,10 +163,13 @@ export const Timeline = () => {
             cursor: 'pointer'
         };
 
-        const teste =  [{photo: data.user.photo, text: 'qualquer coisa', user: 'esdrinhas'}, 
-            {photo: data.user.photo, text: 'qualquer coisa', user: 'juao'}, 
-            {photo: data.user.photo, text: 'qualquer coisa', user: 'predu'}
-        ]
+        //Ordenando comentários pela data de criação
+        comments.sort(function (x, y) {
+            let a = new Date(x.time),
+                b = new Date(y.time);
+            
+            return a - b
+        })
 
         return (
             <PostBackground>
@@ -176,8 +181,8 @@ export const Timeline = () => {
                         />
 
                         <LikeIcon id={`anchor-element${id}`} onClick={()=>{
-                        getPosts()
-                        likeHandler(id)
+                            getPosts()
+                            likeHandler(id)
                         }}>
                             {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
                             <LikeText>{`${likes.length} likes`}</LikeText>
@@ -187,7 +192,7 @@ export const Timeline = () => {
 
                         <CommentIcon>
                             <AiOutlineComment onClick={() => showComment(id)}/>
-                            <CommentText>{`${2} comments`}</CommentText>
+                            <CommentText>{`${comments.length} comments`}</CommentText>
                         </CommentIcon>
                     </LeftPart>
 
@@ -265,22 +270,22 @@ export const Timeline = () => {
 
                 <CommentContainer isOpen={clickedPosts.includes(id)}>
                     {
-                    teste.map((c, idx) => 
-                            <li key={idx}>
-                                <img src={c.photo} alt='user picture'/>
+                        comments.map((c, idx) => 
+                                <li key={idx}>
+                                    <img src={c.user_photo} alt='user picture'/>
 
-                                <div>
-                                    {data.user.id !== u.id 
-                                        ? 
-                                    <h1>{c.user} <span>• post’s author</span></h1>
-                                        : 
-                                    <h1>{c.user}</h1>
-                                    }
+                                    <div>
+                                        {u.id === c.user_id
+                                            ? 
+                                        <h1>{c.user_name} <span>• post’s author</span></h1>
+                                            : 
+                                        <h1>{c.user_name}</h1>
+                                        }
 
-                                    <span>{c.text}</span>
-                                </div>
-                            </li>
-                        )
+                                        <span>{c.comment}</span>
+                                    </div>
+                                </li>
+                           )
                     }
 
                     <PostCommentContainer>
