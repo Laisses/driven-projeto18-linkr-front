@@ -187,6 +187,7 @@ export const Timeline = () => {
 
         return (
             <PostBackground>
+            <AllPost/>
                 {isRepost 
                   ? 
                   <RepostContainer>
@@ -1070,7 +1071,7 @@ const RepostText = styled.span`
 
 const AllPost = styled.div`
     position: relative;
-    display: flex;
+    display: none;
     flex-direction: column;
     border-radius: 16px;
     background-color: #1E1E1E;
