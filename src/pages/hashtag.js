@@ -1,4 +1,4 @@
-import { BASE_URL } from "../constants/url";
+import { BASE_URL, BASE_URL_LOCAL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { IoPaperPlaneOutline } from "react-icons/io5"
@@ -13,20 +13,24 @@ import { Tooltip } from 'react-tooltip'
 import 'react-tooltip/dist/react-tooltip.css'
 import { ReactTagify } from "react-tagify"
 import { useNavigate, useParams } from "react-router-dom";
-import ReactModal from "react-modal";
 import { device } from "../constants/device"
 import { Link } from "react-router-dom";
+import DeleteReactModal from "react-modal";
+import ShareReactModal from "react-modal";
+import { BiRepost } from "react-icons/bi";
 
 
 export const HashtagPage = () => {
-    const { config, counter, setCounter, data, token } = useContext(MyContext);
+    const { config, counter, setCounter, data, token, followingIds } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalPostId, setModalPostId] = useState(null);
     const [errorMessage, setErrorMessage] = useState(false);
     const navigate = useNavigate();
     const [clickedPosts, setClickedPosts] = useState([]);
     const { hashtag } = useParams()
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteModalPostId, setDeleteModalPostId] = useState(null);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [shareModalPostId, setShareModalPostId] = useState(null);
 
     useEffect(() => {
         if (token === null) {
@@ -37,15 +41,14 @@ export const HashtagPage = () => {
     
     const deletePostHandler = async (postId) => {
         try {
-            await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
-            setIsModalOpen(false);
-            setModalPostId(null)
+            await axios.delete(`${BASE_URL_LOCAL}/timeline/${postId}`, config);
+            setIsDeleteModalOpen(false);
+            setDeleteModalPostId(null)
             getPosts();
         } catch (error) {
             setErrorMessage(true);
         }
     }
-    
     const getPosts = async () => {
         if (token === null) return "You must be logged in to access this page"
         
@@ -58,6 +61,19 @@ export const HashtagPage = () => {
             navigate("/");
         }
     };
+
+    const postRepost = async (postId) => {
+        const request = axios.post(`${BASE_URL_LOCAL}/reposts`, {id: postId}, config);
+        request.then(()=> {
+            setIsShareModalOpen(false);
+            setShareModalPostId(null)
+            getPosts();
+        });
+        request.catch ((err) => {
+            alert("Algo deu errado e a culpa é nossa. =/");
+            console.log(err);
+    });
+    }
 
     const openNewTab = url => {
         window.open(url, '_blank').focus();
@@ -115,6 +131,15 @@ export const HashtagPage = () => {
         }
     }
 
+    const postComment = async (comment, postId, userId) => {
+        try {
+            await axios.post(`${BASE_URL}/comments`, {comment, postId, userId}, config);
+            getPosts()
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
             await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
@@ -126,17 +151,18 @@ export const HashtagPage = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u, likes } = post;
+        const { id, description, link, user: u, likes, comments, reposts, repostedBy, isRepost } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
+        const [comment, setComment] = useState("");
 
-        const tooltipInfo = (likes) => {
-            const result = likes?.map((like) => {
+        const tooltipLikesInfo = (likes) => {
+            const result = likes.map((like) => {
                 return (
                 <TooltipLike key={like.user_id}>
-                <TooltipImg src={like.user_photo}/>
-                <TooltipName>{like.user_name}</TooltipName>
+                    <TooltipImg src={like.user_photo}/>
+                    <TooltipName>{like.user_name}</TooltipName>
                 </TooltipLike>)
             }, [])
             return <TooltipContainer>{result}</TooltipContainer>
@@ -149,14 +175,26 @@ export const HashtagPage = () => {
             cursor: 'pointer'
         };
 
-        const teste =  [
-            {photo: data.user.photo, text: 'qualquer coisa', user: 'esdrinhas'}, 
-            {photo: data.user.photo, text: 'qualquer coisa', user: 'juao'}, 
-            {photo: data.user.photo, text: 'qualquer coisa', user: 'predu'}
-        ]
+        //Ordenando comentários pela data de criação
+        comments?.sort(function (x, y) {
+            let a = new Date(x.time),
+                b = new Date(y.time);
+            
+            return a - b
+        })
 
         return (
-             <PostBackground>
+            <PostBackground>
+                {isRepost 
+                  ? 
+                  <RepostContainer>
+                      <BiRepost size={"20px"} color="white"/>
+                      <RepostText>Re-posted by {repostedBy}</RepostText>
+                  </RepostContainer>
+                  :
+                  <></>
+                }
+                
                 <PostsContainer>
                     <LeftPart>
                         <ProfilePicture
@@ -164,23 +202,31 @@ export const HashtagPage = () => {
                             alt="profile picture"
                         />
 
-                        <LikeIcon id={`anchor-element${id}`} onClick={()=>{
+                        <LikeIcon id={`anchor-element${id}`}  event={ isRepost ? "none" : "all"} onClick={()=>{
                             getPosts()
                             likeHandler(id)
                         }}>
                             {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
-                            <LikeText>{`${likes.length} likes`}</LikeText>
+                            <LikeText>{`${likes?.length === undefined ? 0 : likes.length} likes`}</LikeText>
                         </LikeIcon>
-                        <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipInfo(likes)}</Tooltip>
+                        <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
 
 
                         <CommentIcon>
                             <AiOutlineComment onClick={() => showComment(id)}/>
-                            <CommentText>{`${2} comments`}</CommentText>
+                            <CommentText>{`${comments?.length === undefined ? 0 : comments.length} comments`}</CommentText>
                         </CommentIcon>
+                        
+                        <ShareIcon event={ isRepost ? "none" : "all"}  id={`anchor-share-element${id}`} onClick={()=>{
+                            openShareModal(id)
+                            }}>
+                            <BiRepost size={"20px"} />
+                            <ShareText>{`${reposts?.length === undefined ? 0 : reposts.length} re-posts`}</ShareText>
+                        </ShareIcon>
+                        <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
                     </LeftPart>
 
-                    <Post>
+                    <Post event={ isRepost ? "none" : "all"}>
                         <PostHeader>
                             <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
                             {
@@ -197,7 +243,7 @@ export const HashtagPage = () => {
                                     </div>
                                     <div>
                                         <DeleteIcon onClick={() => {
-                                            openModal(id)
+                                            openDeleteModal(id)
                                         }}>
                                             <TiTrash size={"20px"} />
                                         </DeleteIcon>
@@ -207,6 +253,7 @@ export const HashtagPage = () => {
                                     <></>
                             }
                         </PostHeader>
+                        
                         {
                             !edit
                                 ?
@@ -216,7 +263,7 @@ export const HashtagPage = () => {
                                         navigate(`/hashtag/${tag.replace('#', '')}`)
                                     }}
                                 >
-                                    <Description>{description}</Description>
+                                    <Description>{description || ""}</Description>
                                 </ReactTagify>
                                 :
                                 <EditInput
@@ -254,30 +301,38 @@ export const HashtagPage = () => {
 
                 <CommentContainer isOpen={clickedPosts.includes(id)}>
                     {
-                    teste.map((c, idx) => 
-                            <li key={idx}>
-                                <img src={c.photo} alt='user picture'/>
+                        comments?.map((c, idx) => 
+                                <li key={idx}>
+                                    <img src={c.user_photo} alt='user picture'/>
 
-                                <div>
-                                    {data.user.id !== u.id 
-                                        ? 
-                                    <h1>{c.user} <span>• post’s author</span></h1>
-                                        : 
-                                    <h1>{c.user}</h1>
-                                    }
-
-                                    <span>{c.text}</span>
-                                </div>
-                            </li>
-                        )
+                                    <div>
+                                        {
+                                            u.id === c.user_id
+                                            ?
+                                            <h1>{c.user_name} <span>• post’s author</span></h1>
+                                            :
+                                            <h1>
+                                                {
+                                                followingIds.includes(c.user_id)
+                                                ?
+                                                <h1>{c.user_name} <span>• following</span></h1>
+                                                :
+                                                <h1>{c.user_name}</h1>
+                                                }
+                                            </h1>
+                                        }
+                                        <span>{c.comment}</span>
+                                    </div>
+                                </li>
+                           )
                     }
-
-                    <PostCommentContainer>
-                        <img src={data.user.photo} alt="user picture"/>
-                        <input placeholder="write a comment..."/>
-                        <IoPaperPlaneOutline/>
-                    </PostCommentContainer>
                 </CommentContainer>
+
+                <PostCommentContainer isOpen={clickedPosts.includes(id)}>
+                    <img src={data.user.photo} alt="user picture"/>
+                    <input placeholder="write a comment..." onChange={(e) => {setComment(e.target.value)}}/>
+                    <IoPaperPlaneOutline onClick={() => postComment(comment, id, data.user.id)}/>
+                </PostCommentContainer>
         </PostBackground>
         );
     };
@@ -289,30 +344,39 @@ export const HashtagPage = () => {
             return <Message>There are no posts yet</Message>
         } else if (posts) {
             return (
-                <ul>
+                <ListContainer>
                     {posts.map(p => <ListofPosts
                         key={p.id}
                         {...p}
                     />)}
-                </ul>
+                </ListContainer>
             );
         }
     };
 
-    const openModal = (id) => {
-        setIsModalOpen(true)
-        setModalPostId(id)
+    const openDeleteModal = (id) => {
+        setIsDeleteModalOpen(true)
+        setDeleteModalPostId(id)
     }
 
-    const closeModal = () => {
-        setIsModalOpen(false)
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false)
+    }
+
+    const openShareModal = (id) => {
+        setIsShareModalOpen(true)
+        setShareModalPostId(id)
+    }
+
+    const closeShareModal = () => {
+        setIsShareModalOpen(false)
     }
 
     return (
         <>
             <Header />
-            <ReactModal
-                    isOpen={isModalOpen}
+            <DeleteReactModal
+                    isOpen={isDeleteModalOpen}
                     contentLabel="Minimal Modal Example"
                     style={{overlay: {
                         position: 'fixed',
@@ -343,11 +407,48 @@ export const HashtagPage = () => {
                     <ModalContainer>
                         <ModalText>Are you sure you want to delete this post?</ModalText>
                         <ModalButtons>
-                        <ModalButtonCancel onClick={closeModal}>Cancelar</ModalButtonCancel>
-                        <ModalButtonConrfirm onClick={() => deletePostHandler(modalPostId)}>Confirmar</ModalButtonConrfirm>
+                        <ModalButtonCancel onClick={closeDeleteModal}>Cancelar</ModalButtonCancel>
+                        <ModalButtonConrfirm onClick={() => deletePostHandler(deleteModalPostId)}>Confirmar</ModalButtonConrfirm>
                         </ModalButtons>
                     </ModalContainer>
-            </ReactModal>
+            </DeleteReactModal>
+            <ShareReactModal
+                    isOpen={isShareModalOpen}
+                    contentLabel="Minimal Modal Example"
+                    style={{overlay: {
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+                      },
+                      content: {
+                        position: 'absolute',
+                        width: '497px',
+                        height: '262px',
+                        top: '30%',
+                        bottom: '30%',
+                        left: '30%',
+                        right: '30%',
+                        border: '1px solid #333333',
+                        background: '#333333',
+                        overflow: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        borderRadius: '50px',
+                        outline: 'none',
+                        padding: '20px',
+
+                      }}}
+                >
+                    <ModalContainer>
+                        <ModalText>Are you sure you want to re-post this post?</ModalText>
+                        <ModalButtons>
+                        <ModalButtonCancel onClick={closeShareModal}>Cancelar</ModalButtonCancel>
+                        <ModalButtonConrfirm onClick={() => postRepost(shareModalPostId)}>Confirmar</ModalButtonConrfirm>
+                        </ModalButtons>
+                    </ModalContainer>
+            </ShareReactModal>
             <TimelineBackground>
                 <TimelineContainer>
                     <Title># {hashtag}</Title>
@@ -523,6 +624,12 @@ const Button = styled.button`
     cursor: pointer;
 `;
 
+const ListContainer = styled.ul`
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+`
+
 const PostBackground = styled.div`
     background-color: #1E1E1E;
     border-radius: 16px;
@@ -531,9 +638,8 @@ const PostBackground = styled.div`
 const PostsContainer = styled.div`
     position: relative;
     width: 611px;
-    height: 276px;
+    height: auto;
     padding: 16px;
-    margin-top: 16px;
     border-radius: 16px;
     color: #ffffff;
     background-color: #171717;
@@ -546,9 +652,15 @@ const PostsContainer = styled.div`
 `;
 
 const Post = styled.li`
+    pointer-events: ${props => props.event};
     font-family: 'Lato', sans-serif;
     font-weight: 400;
     padding-left: 18px;
+
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const PostHeader = styled.div`
@@ -566,10 +678,27 @@ const CommentContainer = styled.ul`
     display: ${props => props.isOpen ? 'flex' : 'none'};
     flex-direction: column;
     width: 611px;
-    height: auto;
+    max-height: 220px;
     background: #1E1E1E;
-    border-radius: 16px 16px 16px 16px;
-    padding: 25px 25px;
+    padding: 25px 25px 0px 25px;
+    overflow-y: scroll;
+
+    @media (max-width: 840px) {
+            width: 100%;
+        }
+
+    &::-webkit-scrollbar {
+        width: 15px;
+        padding: 5px;
+    }
+    &::-webkit-scrollbar-track {
+        background: none;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #ffffff;
+    }
 
     li {
         display: flex;
@@ -612,10 +741,19 @@ const CommentContainer = styled.ul`
 `;
 
 const PostCommentContainer = styled.div`
-    display: flex;
+    display: ${props => props.isOpen ? 'flex' : 'none'};
+    box-sizing: border-box;
     align-items: center;
     justify-content: space-between;
     position: relative;
+    padding: 10px 25px 25px 25px;
+    background: #1E1E1E;
+    border-radius: 16px;
+
+    @media (max-width: 840px) {
+        border-radius: 0;
+        width: 100%;
+    }
 
     img {
         height: 40px;
@@ -627,7 +765,7 @@ const PostCommentContainer = styled.div`
     svg {
         position: absolute;
         color: #ffffff;
-        right: 12.5px;
+        right: 37.5px;
         width: 20px;
         height: 20px;
         cursor: pointer;
@@ -687,6 +825,11 @@ const CommentText = styled.span`
 
 const HeaderIcons = styled.div`
     display: flex;
+
+    @media (max-width: 840px) {
+        width: 100%;
+        justify-content: flex-end;
+    }
 `;
 
 const EditIcon = styled.div`
@@ -719,6 +862,7 @@ const LinkMetaData = styled.div`
 
     @media ${device.mobileL} {
         width: 60%;
+        padding: 20px;
     }
 `;
 
@@ -737,7 +881,11 @@ const LinkTitle = styled.h4`
     color: #CECECE;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 300px;
+    width: 345px;
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const LinkDescription = styled.p`
@@ -747,7 +895,11 @@ const LinkDescription = styled.p`
     max-height: 30px;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 300px;
+    width: 345px;
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const LinkUrl = styled.p`
@@ -757,7 +909,11 @@ const LinkUrl = styled.p`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    width: 300px;
+    width: 345px;
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const LikeIcon = styled.div`
@@ -766,14 +922,16 @@ const LikeIcon = styled.div`
     align-items: center;
     margin-top: 12px;
     top: 30%;
-    left: 25px;
+    left: 17px;
     width: auto;
     height: auto;
     gap: 5px;
+    pointer-events: ${props => props.event};
 
     svg {
         cursor: pointer;
     }
+
 `;
 
 const LikeText = styled.span`
@@ -786,6 +944,29 @@ const LikeText = styled.span`
     color: #FFFFFF;
     width: 35px;
     cursor: default;
+`;
+
+const ShareIcon = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    top: 65%;
+    left: 17px;
+    width: auto;
+    height: auto;
+    gap: 5px;
+    pointer-events: ${props => props.event};
+`;
+
+const ShareText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 50px;
 `;
 
 const ModalContainer = styled.div`
@@ -852,6 +1033,34 @@ const TooltipImg = styled.img`
 
 const TooltipName = styled.span`
     font-family: 'Lato', sans-serif;
+    font-size: 11px;
+    line-height: 13px;
     text-align: center;
+    color: #FFFFFF;
+`
+
+const RepostContainer = styled.div`
+    display: flex;
+    align-items: center;
+    background-color: #1E1E1E;
+    border-radius: 16px;
+    height: 49px;
+    width: 611px;
+    padding: 0 25px;
+
+    @media (max-width: 840px) {
+        border-radius: 0;
+        width: 100%;
+    }
+`
+
+const RepostText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;  
+    text-align: center;
+    margin-left: 10px;
     color: #FFFFFF;
 `;
