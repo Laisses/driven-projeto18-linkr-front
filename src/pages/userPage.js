@@ -1,4 +1,4 @@
-import { BASE_URL, BASE_URL_LOCAL } from "../constants/url";
+import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { IoPaperPlaneOutline } from "react-icons/io5"
@@ -43,7 +43,7 @@ export const UserPage = () => {
     })
 
     useEffect(() => {
-        axios.get(`${BASE_URL_LOCAL}/userData/${userId}`, config)
+        axios.get(`${BASE_URL}/userData/${userId}`, config)
         .then((res) => {
             setUserName(res.data.name)
             setUserPhoto(res.data.photo)
@@ -388,7 +388,7 @@ export const UserPage = () => {
         setEnableButton(true)
         
         if (followingIds.includes(Number(userId))) {
-            axios.delete(`${BASE_URL_LOCAL}/unfollow/${userId}`, config)
+            axios.delete(`${BASE_URL}/unfollow/${userId}`, config)
             .then((res) => {
                 setEnableButton(false)
                 setCounter(counter + 1)
@@ -400,7 +400,7 @@ export const UserPage = () => {
             })
 
         } else {
-            axios.post(`${BASE_URL_LOCAL}/follow/${userId}`, null, config)
+            axios.post(`${BASE_URL}/follow/${userId}`, null, config)
             .then((res) => {
                 setEnableButton(false)
                 setCounter(counter + 1)

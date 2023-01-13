@@ -2,7 +2,7 @@ import axios from "axios"
 import styled from "styled-components"
 import { useContext, useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
-import { BASE_URL, BASE_URL_LOCAL } from "../constants/url"
+import { BASE_URL } from "../constants/url"
 import { MyContext } from "../contexts/MyContext"
 import { Oval } from "react-loader-spinner"
 import { device } from "../constants/device"
@@ -31,7 +31,7 @@ export default function TrendingList () {
     }, [counter])
 
     useEffect(() => {
-        axios.get(`${BASE_URL_LOCAL}/following`, config)
+        axios.get(`${BASE_URL}/following`, config)
         .then((res) => {
             setFollowingIds(res.data)
             
