@@ -1,4 +1,4 @@
-import { BASE_URL, BASE_URL_LOCAL } from "../constants/url";
+import { BASE_URL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { IoPaperPlaneOutline } from "react-icons/io5"
@@ -39,7 +39,7 @@ export const UserPage = () => {
     })
 
     useEffect(() => {
-        axios.get(`${BASE_URL_LOCAL}/userData/${userId}`, config)
+        axios.get(`${BASE_URL}/userData/${userId}`, config)
         .then((res) => {
             setUserName(res.data.name)
             setUserPhoto(res.data.photo)
@@ -323,7 +323,7 @@ export const UserPage = () => {
         setEnableButton(true)
         
         if (followingIds.includes(Number(userId))) {
-            axios.delete(`${BASE_URL_LOCAL}/unfollow/${userId}`, config)
+            axios.delete(`${BASE_URL}/unfollow/${userId}`, config)
             .then((res) => {
                 setEnableButton(false)
                 setCounter(counter + 1)
@@ -335,7 +335,7 @@ export const UserPage = () => {
             })
 
         } else {
-            axios.post(`${BASE_URL_LOCAL}/follow/${userId}`, null, config)
+            axios.post(`${BASE_URL}/follow/${userId}`, null, config)
             .then((res) => {
                 setEnableButton(false)
                 setCounter(counter + 1)
@@ -484,19 +484,6 @@ const Title = styled.h1`
     }
 `;
 
-const PublishContainer = styled.div`
-    height: 209px;
-    padding: 16px;
-    background-color: #ffffff;
-    border-radius: 16px;
-    display: flex;
-    margin-bottom: 30px;
-
-    @media ${device.tablet} {
-        border-radius: 0;
-    }
-`;
-
 const Message = styled.p`
     font-family: 'Lato', sans-serif;
     font-size: 20px;
@@ -507,73 +494,6 @@ const ProfilePicture = styled.img`
     width: 50px;
     height: 50px;
     border-radius: 50%;
-`;
-
-const Form = styled.form`
-    padding-left: 18px;
-    display: flex;
-    flex-direction: column;
-    width: 90%;
-
-    @media ${device.mobileL} {
-        width: 100%;
-        padding-left: 0;
-    }
-`;
-
-const ProfilePictureForm = styled.img`
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-
-    @media ${device.mobileL} {
-        display: none;
-    }
-`;
-
-const FormTitle = styled.h2`
-    font-family: 'Lato', sans-serif;
-    font-size: 20px;
-    font-weight: 300;
-    color: #707070;
-    padding-top: 6px;
-    padding-bottom: 10px;
-
-    @media ${device.mobileL} {
-        text-align: center;
-    }
-`;
-
-const LinkInput = styled.input`
-    font-family: 'Lato', sans-serif;
-    font-size: 15px;
-    font-weight: 300;
-    height: 30px;
-    border-radius: 3px;
-    background-color: #EFEFEF;
-    border: none;
-    margin-top: 5px;
-    padding-left: 10px;
-    &:focus {
-        outline: none;
-    }
-`;
-
-const TextInput = styled.textarea`
-    font-family: 'Lato', sans-serif;
-    font-size: 15px;
-    font-weight: 300;
-    height: 66px;
-    border-radius: 3px;
-    background-color: #EFEFEF;
-    border: none;
-    margin-top: 5px;
-    padding-top: 5px;
-    padding-left: 10px;
-    resize: none;
-    &:focus {
-        outline: none;
-    }
 `;
 
 const EditInput = styled.textarea`
@@ -590,18 +510,6 @@ const EditInput = styled.textarea`
     &:focus {
         outline: none;
     }
-`;
-
-const Button = styled.button`
-    width: 112px;
-    height: 31px;
-    border: none;
-    border-radius: 5px;
-    margin-top: 5px;
-    color: #ffffff;
-    background-color: ${props => !props.disabled ? "#1877F2" : "#1154ab"};
-    align-self: flex-end;
-    cursor: pointer;
 `;
 
 const PostBackground = styled.div`
