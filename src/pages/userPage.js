@@ -1,4 +1,4 @@
-import { BASE_URL } from "../constants/url";
+import { BASE_URL, BASE_URL_LOCAL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { IoPaperPlaneOutline } from "react-icons/io5"
