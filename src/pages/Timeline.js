@@ -19,7 +19,6 @@ import DeleteReactModal from "react-modal";
 import ShareReactModal from "react-modal";
 import { device } from "../constants/device";
 
-
 export const Timeline = () => {
     const { config, counter, setCounter, data, token, followingIds } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
@@ -188,7 +187,6 @@ export const Timeline = () => {
 
         return (
             <PostBackground>
-            <AllPost/>
                 {isRepost 
                   ? 
                   <RepostContainer>
@@ -322,13 +320,13 @@ export const Timeline = () => {
                                 </li>
                            )
                     }
-
-                    <PostCommentContainer>
-                        <img src={data.user.photo} alt="user picture"/>
-                        <input placeholder="write a comment..." onChange={(e) => {setComment(e.target.value)}}/>
-                        <IoPaperPlaneOutline onClick={() => postComment(comment, id, data.user.id)}/>
-                    </PostCommentContainer>
                 </CommentContainer>
+
+                <PostCommentContainer isOpen={clickedPosts.includes(id)}>
+                    <img src={data.user.photo} alt="user picture"/>
+                    <input placeholder="write a comment..." onChange={(e) => {setComment(e.target.value)}}/>
+                    <IoPaperPlaneOutline onClick={() => postComment(comment, id, data.user.id)}/>
+                </PostCommentContainer>
         </PostBackground>
         );
     };
@@ -349,12 +347,12 @@ export const Timeline = () => {
         } else if (posts) {
             
             return (
-                <ul>
+                <ListContainer>
                     {followedPosts.map(p => <ListofPosts
                         key={p.id}
                         {...p}
                     />)}
-                </ul>
+                </ListContainer>
             );
         }
     };
@@ -699,6 +697,12 @@ const Button = styled.button`
     cursor: pointer;
 `;
 
+const ListContainer = styled.ul`
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+`
+
 const PostBackground = styled.div`
     background-color: #1E1E1E;
     border-radius: 16px;
@@ -707,7 +711,7 @@ const PostBackground = styled.div`
 const PostsContainer = styled.div`
     position: relative;
     width: 611px;
-    height: 276px;
+    height: auto;
     padding: 16px;
     border-radius: 16px;
     color: #ffffff;
@@ -725,6 +729,11 @@ const Post = styled.li`
     font-family: 'Lato', sans-serif;
     font-weight: 400;
     padding-left: 18px;
+
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const PostHeader = styled.div`
@@ -742,10 +751,27 @@ const CommentContainer = styled.ul`
     display: ${props => props.isOpen ? 'flex' : 'none'};
     flex-direction: column;
     width: 611px;
-    height: auto;
+    max-height: 220px;
     background: #1E1E1E;
-    border-radius: 16px 16px 16px 16px;
-    padding: 25px 25px;
+    padding: 25px 25px 0px 25px;
+    overflow-y: scroll;
+
+    @media (max-width: 840px) {
+            width: 100%;
+        }
+
+    &::-webkit-scrollbar {
+        width: 15px;
+        padding: 5px;
+    }
+    &::-webkit-scrollbar-track {
+        background: none;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #ffffff;
+    }
 
     li {
         display: flex;
@@ -788,10 +814,19 @@ const CommentContainer = styled.ul`
 `;
 
 const PostCommentContainer = styled.div`
-    display: flex;
+    display: ${props => props.isOpen ? 'flex' : 'none'};
+    box-sizing: border-box;
     align-items: center;
     justify-content: space-between;
     position: relative;
+    padding: 10px 25px 25px 25px;
+    background: #1E1E1E;
+    border-radius: 16px;
+
+    @media (max-width: 840px) {
+        border-radius: 0;
+        width: 100%;
+    }
 
     img {
         height: 40px;
@@ -803,7 +838,7 @@ const PostCommentContainer = styled.div`
     svg {
         position: absolute;
         color: #ffffff;
-        right: 12.5px;
+        right: 37.5px;
         width: 20px;
         height: 20px;
         cursor: pointer;
@@ -863,6 +898,11 @@ const CommentText = styled.span`
 
 const HeaderIcons = styled.div`
     display: flex;
+
+    @media (max-width: 840px) {
+        width: 100%;
+        justify-content: flex-end;
+    }
 `;
 
 const EditIcon = styled.div`
@@ -895,6 +935,7 @@ const LinkMetaData = styled.div`
 
     @media ${device.mobileL} {
         width: 60%;
+        padding: 20px;
     }
 `;
 
@@ -913,7 +954,11 @@ const LinkTitle = styled.h4`
     color: #CECECE;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 300px;
+    width: 345px;
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const LinkDescription = styled.p`
@@ -923,7 +968,11 @@ const LinkDescription = styled.p`
     max-height: 30px;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 300px;
+    width: 345px;
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const LinkUrl = styled.p`
@@ -933,7 +982,11 @@ const LinkUrl = styled.p`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    width: 300px;
+    width: 345px;
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const LikeIcon = styled.div`
@@ -967,7 +1020,6 @@ const LikeText = styled.span`
 `;
 
 const ShareIcon = styled.div`
-    position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1061,15 +1113,18 @@ const TooltipName = styled.span`
 `
 
 const RepostContainer = styled.div`
-    top: -33px;
-    right: 0;
     display: flex;
+    align-items: center;
     background-color: #1E1E1E;
     border-radius: 16px;
     height: 49px;
     width: 611px;
-    padding-left: 18px;
-    padding-top: 13px;
+    padding: 0 25px;
+
+    @media (max-width: 840px) {
+        border-radius: 0;
+        width: 100%;
+    }
 `
 
 const RepostText = styled.span`
@@ -1082,12 +1137,3 @@ const RepostText = styled.span`
     margin-left: 10px;
     color: #FFFFFF;
 `;
-
-const AllPost = styled.div`
-    position: relative;
-    display: none;
-    flex-direction: column;
-    border-radius: 16px;
-    background-color: #1E1E1E;
-    margin-top: 33px;
-`
