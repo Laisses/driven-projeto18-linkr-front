@@ -66,8 +66,8 @@ export const Timeline = () => {
             setTimestamp(new Date().toISOString());
         } catch (error) {
             setErrorMessage(true);
-            //alert("You must login to access this page");
-            //navigate("/");
+            alert("You must login to access this page");
+            navigate("/");
         }
     };
 
