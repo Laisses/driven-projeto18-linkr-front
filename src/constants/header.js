@@ -99,28 +99,27 @@ export default function Header () {
 
         <OutsideInputContainer profiles={profiles} rotate={rotate.toString()}>
             <img src={searchIcon} alt="Search Icon" />
-
-            <DebounceInput 
+            <DebounceInput
                 placeholder="Search for people"
                 minLength={3}
                 debounceTimeout={300}
-                onChange={e => setName(e.target.value)} 
-            >
-
-                
-            </DebounceInput>
+                onChange={e => setName(e.target.value)}
+            />
 
             <div>
                 {profiles.map((p) => {
                     return (
-                        <StyledLink to={`/user/${p.id}`} key={p.id}> 
+                        <StyledLink to={`/user/${p.id}`} key={p.id}>
                             <span>
                                 <img src={p.photo} alt="Profile Pic" />
                                 <h2>{p.name}</h2>
+                                <h3>
+                                    {followingIds.includes(p.id) ? "• following" : ""}
+                                </h3>
                             </span>
                         </StyledLink>
                     )
-                })}             
+                })}
             </div>
         </OutsideInputContainer>
         </>

@@ -48,7 +48,7 @@ export const Timeline = () => {
 
     const deletePostHandler = async (postId) => {
         try {
-            await axios.delete(`${BASE_URL_LOCAL}/timeline/${postId}`, config);
+            await axios.delete(`${BASE_URL}/timeline/${postId}`, config);
             setIsDeleteModalOpen(false);
             setDeleteModalPostId(null)
             getPosts();
@@ -82,15 +82,15 @@ export const Timeline = () => {
     }
 
     const postRepost = async (postId) => {
-        const request = axios.post(`${BASE_URL_LOCAL}/reposts`, { id: postId }, config);
-        request.then(() => {
-            setIsShareModalOpen(false);
-            setShareModalPostId(null)
-            getPosts();
-        });
-        request.catch((err) => {
-            alert("Algo deu errado e a culpa é nossa. =/");
-            console.log(err);
+            const request = axios.post(`${BASE_URL}/reposts`, {id: postId}, config);
+            request.then(()=> {
+                setIsShareModalOpen(false);
+                setShareModalPostId(null)
+                getPosts();
+            });
+            request.catch ((err) => {
+                alert("Algo deu errado e a culpa é nossa. =/");
+                console.log(err);
         });
     }
 
@@ -103,10 +103,10 @@ export const Timeline = () => {
     }, [setErrorMessage]);
 
     const likeHandler = (postId) => {
-        const request = axios.post(`${BASE_URL_LOCAL}/likes`, { id: postId }, config);
-        request.then(() => {
-            getPosts();
-        });
+        const request = axios.post(`${BASE_URL}/likes`, {id: postId}, config);
+            request.then(() => {
+                getPosts();
+            });
         request.catch((err) => {
             console.log(err);
         });
@@ -114,7 +114,7 @@ export const Timeline = () => {
 
     const addHashtag = async (name, post_id) => {
         try {
-            await axios.post(`${BASE_URL_LOCAL}/hashtag`, { name, post_id }, config);
+            await axios.post(`${BASE_URL}/hashtag`, { name, post_id }, config);
             setCounter(counter + 1)
         } catch (err) {
             console.log(err);
@@ -123,7 +123,7 @@ export const Timeline = () => {
 
     const editHashtag = async (post_id, text) => {
         try {
-            await axios.delete(`${BASE_URL_LOCAL}/hashtag/${post_id}`, config);
+            await axios.delete(`${BASE_URL}/hashtag/${post_id}`, config);
             setCounter(counter + 1)
         } catch (err) {
             console.log(err);
@@ -161,7 +161,7 @@ export const Timeline = () => {
 
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
-            await axios.put(`${BASE_URL_LOCAL}/timeline`, { post_id: id, description: text }, config);
+            await axios.put(`${BASE_URL}/timeline`, {post_id: id, description: text}, config);
             getPosts();
         } catch (err) {
             alert("Sorry! Something went wrong, please try again later!")
@@ -406,7 +406,7 @@ export const Timeline = () => {
         }
 
         try {
-            const res = await axios.post(`${BASE_URL_LOCAL}/timeline`, form, config);
+            const res = await axios.post(`${BASE_URL}/timeline`, form, config);
 
             descriptionWords.forEach((w) => {
                 if (w.includes("#")) {
