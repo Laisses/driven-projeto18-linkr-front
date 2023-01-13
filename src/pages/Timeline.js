@@ -3,6 +3,8 @@ import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
 import { TiPencil, TiTrash } from "react-icons/ti";
 import { BiRepost, BiRefresh } from "react-icons/bi";
+import { IoPaperPlaneOutline } from "react-icons/io5"
+import { AiOutlineComment } from 'react-icons/ai'
 import { useContext, useEffect, useState } from "react";
 import { MyContext } from "../contexts/MyContext";
 import TrendingList from "../components/trending";
@@ -18,9 +20,8 @@ import ShareReactModal from "react-modal";
 import { device } from "../constants/device";
 import useInterval from "use-interval";
 
-
 export const Timeline = () => {
-    const { config, counter, setCounter, data, token } = useContext(MyContext);
+    const { config, counter, setCounter, data, token, followingIds } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [form, setForm] = useState({ description: "", link: "" });
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -31,15 +32,16 @@ export const Timeline = () => {
     const [errorMessage, setErrorMessage] = useState(false);
     const [timestamp, setTimestamp] = useState(null);
     const [nextPosts, setNextPosts] = useState([]);
-    const navigate = useNavigate()
-
+    const [clickedPosts, setClickedPosts] = useState([]);  
+    const navigate = useNavigate();
+    
     useEffect(() => {
         if (token === null) {
             alert("You must be logged in to access this page");
             navigate("/")
         }
-    })
-
+    });
+    
     useInterval(async () => {
         await getNewPosts();
     }, 15000);
@@ -64,8 +66,8 @@ export const Timeline = () => {
             setTimestamp(new Date().toISOString());
         } catch (error) {
             setErrorMessage(true);
-            alert("You must login to access this page");
-            navigate("/");
+            //alert("You must login to access this page");
+            //navigate("/");
         }
     };
 
@@ -136,6 +138,27 @@ export const Timeline = () => {
         });
     }
 
+    const showComment = (id) => {
+        if (!clickedPosts.includes(id)) {
+            let newArray = [...clickedPosts, id]
+            setClickedPosts(newArray)
+        }
+
+        if (clickedPosts.includes(id)) {
+            let newArray = clickedPosts.filter(postId => postId !== id)
+            setClickedPosts(newArray)
+        }
+    }
+
+    const postComment = async (comment, postId, userId) => {
+        try {
+            await axios.post(`${BASE_URL}/comments`, {comment, postId, userId}, config);
+            getPosts()
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
             await axios.put(`${BASE_URL_LOCAL}/timeline`, { post_id: id, description: text }, config);
@@ -147,10 +170,12 @@ export const Timeline = () => {
     };
 
     const ListofPosts = post => {
-        const { id, description, link, user: u, likes, reposts, repostedBy, isRepost } = post;
+        const { id, description, link, user: u, likes, comments, reposts, repostedBy, isRepost } = post;
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
+        const [comment, setComment] = useState("");
+
 
         const tooltipLikesInfo = (likes) => {
             const result = likes.map((like) => {
@@ -170,47 +195,85 @@ export const Timeline = () => {
             cursor: 'pointer'
         };
 
+        //Ordenando comentários pela data de criação
+        comments.sort(function (x, y) {
+            let a = new Date(x.time),
+                b = new Date(y.time);
+            
+            return a - b
+        })
+
         return (
-            <AllPost>
-                {isRepost ?
-                    <RepostContainer>
-                        <BiRepost size={"20px"} color="white" />
-                        <RepostText>Re-posted by {repostedBy}</RepostText>
-                    </RepostContainer>
-                    :
-                    <></>}
+            <PostBackground>
+                {isRepost 
+                  ? 
+                  <RepostContainer>
+                      <BiRepost size={"20px"} color="white"/>
+                      <RepostText>Re-posted by {repostedBy}</RepostText>
+                  </RepostContainer>
+                  :
+                  <></>
+                }
+                
                 <PostsContainer>
-                    <ProfilePicture
-                        src={u.photo}
-                        alt="profile picture"
-                    />
-                    <Post>
+                    <LeftPart>
+                        <ProfilePicture
+                            src={u.photo}
+                            alt="profile picture"
+                        />
+
+                        <LikeIcon id={`anchor-element${id}`}  event={ isRepost ? "none" : "all"} onClick={()=>{
+                            getPosts()
+                            likeHandler(id)
+                        }}>
+                            {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"30px"} /> : <IoIosHeartEmpty size={"30px"} />}
+                            <LikeText>{`${likes.length} likes`}</LikeText>
+                        </LikeIcon>
+                        <Tooltip anchorId={`anchor-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
+
+
+                        <CommentIcon>
+                            <AiOutlineComment onClick={() => showComment(id)}/>
+                            <CommentText>{`${comments.length} comments`}</CommentText>
+                        </CommentIcon>
+                        
+                        <ShareIcon event={ isRepost ? "none" : "all"}  id={`anchor-share-element${id}`} onClick={()=>{
+                            openShareModal(id)
+                            }}>
+                            <BiRepost size={"20px"} />
+                            <ShareText>{`${reposts.length} re-posts`}</ShareText>
+                        </ShareIcon>
+                        <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
+                    </LeftPart>
+
+                    <Post event={ isRepost ? "none" : "all"}>
                         <PostHeader>
                             <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
                             {
                                 data.user.id === u.id
                                     ?
                                     <HeaderIcons>
-                                        <div>
-                                            <EditIcon onClick={() => {
-                                                setEdit(!edit);
-                                                setText(description);
-                                            }}>
-                                                <TiPencil size={"20px"} />
-                                            </EditIcon>
-                                        </div>
-                                        <div>
-                                            <DeleteIcon onClick={() => {
-                                                openDeleteModal(id)
-                                            }}>
-                                                <TiTrash size={"20px"} />
-                                            </DeleteIcon>
-                                        </div>
+                                    <div>
+                                        <EditIcon onClick={() => {
+                                            setEdit(!edit);
+                                            setText(description);
+                                        }}>
+                                            <TiPencil size={"20px"} />
+                                        </EditIcon>
+                                    </div>
+                                    <div>
+                                        <DeleteIcon onClick={() => {
+                                            openDeleteModal(id)
+                                        }}>
+                                            <TiTrash size={"20px"} />
+                                        </DeleteIcon>
+                                    </div>
                                     </HeaderIcons>
                                     :
                                     <></>
                             }
                         </PostHeader>
+
                         {
                             !edit
                                 ?
@@ -254,38 +317,68 @@ export const Timeline = () => {
                             />
                         </LinkContainer>
                     </Post>
-                    <LikeIcon id={`anchor-like-element${id}`} onClick={() => {
-                        likeHandler(id)
-                    }}>
-                        {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"20px"} /> : <IoIosHeartEmpty size={"20px"} />}
-                        <LikeText>{`${likes.length} likes`}</LikeText>
-                    </LikeIcon>
-                    <Tooltip anchorId={`anchor-like-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
-                    <ShareIcon id={`anchor-share-element${id}`} onClick={() => {
-                        openShareModal(id)
-                    }}>
-                        <BiRepost size={"20px"} />
-                        <ShareText>{`${reposts.length} re-posts`}</ShareText>
-                    </ShareIcon>
-                    <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
                 </PostsContainer>
-            </AllPost>
+
+                <CommentContainer isOpen={clickedPosts.includes(id)}>
+                    {
+                        comments.map((c, idx) => 
+                                <li key={idx}>
+                                    <img src={c.user_photo} alt='user picture'/>
+
+                                    <div>
+                                        {
+                                            u.id === c.user_id
+                                            ?
+                                            <h1>{c.user_name} <span>• post’s author</span></h1>
+                                            :
+                                            <h1>
+                                                {
+                                                followingIds.includes(c.user_id)
+                                                ?
+                                                <h1>{c.user_name} <span>• following</span></h1>
+                                                :
+                                                <h1>{c.user_name}</h1>
+                                                }
+                                            </h1>
+                                        }
+                                        <span>{c.comment}</span>
+                                    </div>
+                                </li>
+                           )
+                    }
+                </CommentContainer>
+
+                <PostCommentContainer isOpen={clickedPosts.includes(id)}>
+                    <img src={data.user.photo} alt="user picture"/>
+                    <input placeholder="write a comment..." onChange={(e) => {setComment(e.target.value)}}/>
+                    <IoPaperPlaneOutline onClick={() => postComment(comment, id, data.user.id)}/>
+                </PostCommentContainer>
+        </PostBackground>
         );
     };
 
     const Posts = () => {
+        const followedPosts = posts.filter((p) => {
+            if (followingIds.includes(p.user.id)) {
+                return true
+            }
+        })
+
         if (!posts) {
             return <Message>Loading...</Message>
-        } else if (posts.length === 0) {
-            return <Message>There are no posts yet</Message>
+        } else if(followingIds.length === 0) {
+            return <Message>You don't follow anyone yet. Search for new friends!</Message>
+        } else if (followedPosts.length === 0) {
+            return <Message>No posts found from your friends</Message>
         } else if (posts) {
+            
             return (
-                <ul>
-                    {posts.map(p => <ListofPosts
+                <ListContainer>
+                    {followedPosts.map(p => <ListofPosts
                         key={p.id}
                         {...p}
                     />)}
-                </ul>
+                </ListContainer>
             );
         }
     };
@@ -665,10 +758,21 @@ const Button = styled.button`
     cursor: pointer;
 `;
 
+const ListContainer = styled.ul`
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+`
+
+const PostBackground = styled.div`
+    background-color: #1E1E1E;
+    border-radius: 16px;
+`;
+
 const PostsContainer = styled.div`
     position: relative;
     width: 611px;
-    height: 276px;
+    height: auto;
     padding: 16px;
     border-radius: 16px;
     color: #ffffff;
@@ -682,9 +786,15 @@ const PostsContainer = styled.div`
 `;
 
 const Post = styled.li`
+    pointer-events: ${props => props.event};
     font-family: 'Lato', sans-serif;
     font-weight: 400;
     padding-left: 18px;
+
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const PostHeader = styled.div`
@@ -698,16 +808,172 @@ const Username = styled.div`
     font-size: 19px;
 `;
 
+const CommentContainer = styled.ul`
+    display: ${props => props.isOpen ? 'flex' : 'none'};
+    flex-direction: column;
+    width: 611px;
+    max-height: 220px;
+    background: #1E1E1E;
+    padding: 25px 25px 0px 25px;
+    overflow-y: scroll;
+
+    @media (max-width: 840px) {
+            width: 100%;
+        }
+
+    &::-webkit-scrollbar {
+        width: 15px;
+        padding: 5px;
+    }
+    &::-webkit-scrollbar-track {
+        background: none;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #ffffff;
+    }
+
+    li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #353535;
+        padding: 0 0 16px 0;
+
+        div {
+            margin-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+
+            h1 {
+                font-family: 'Lato';
+                font-style: normal;
+                font-weight: 700;
+                font-size: 14px;
+                line-height: 17px;
+                color: #F3F3F3;
+            }
+
+            span {
+                font-family: 'Lato';
+                font-style: normal;
+                font-weight: 400;
+                font-size: 14px;
+                line-height: 17px;
+                color: #ACACAC;
+            }
+        }
+
+        img {
+            height: 40px;
+            width: 40px;
+            border-radius: 26.5px;
+        }
+    }
+`;
+
+const PostCommentContainer = styled.div`
+    display: ${props => props.isOpen ? 'flex' : 'none'};
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    padding: 10px 25px 25px 25px;
+    background: #1E1E1E;
+    border-radius: 16px;
+
+    @media (max-width: 840px) {
+        border-radius: 0;
+        width: 100%;
+    }
+
+    img {
+        height: 40px;
+        width: 40px;
+        border-radius: 26.5px;
+        margin-right: 14px;
+    }
+
+    svg {
+        position: absolute;
+        color: #ffffff;
+        right: 37.5px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    input {
+        border: none;
+        padding: 11px 15px;
+        width: 510px;
+        height: 40px;
+        background: #252525;
+        border-radius: 8px;
+        font-family: 'Lato';
+        font-style: italic;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 17px;
+        letter-spacing: 0.05em;
+        color: #ffffff;
+
+        ::placeholder {
+            color: #575757;
+        }
+    }
+`
+
+const LeftPart = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+`;
+
+const CommentIcon = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+
+    svg {
+        font-size: 28px;
+        cursor: pointer;
+    }
+`;
+
+const CommentText = styled.span`
+    font-family: 'Lato', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 13px;
+    text-align: center;
+    color: #FFFFFF;
+    width: 60px;
+    cursor: default;
+`;
+
 const HeaderIcons = styled.div`
     display: flex;
-`
+
+    @media (max-width: 840px) {
+        width: 100%;
+        justify-content: flex-end;
+    }
+`;
 
 const EditIcon = styled.div`
     width: 24px;
+    cursor: pointer;
 `;
 
 const DeleteIcon = styled.div`
     width: 24px;
+    cursor: pointer;
 `;
 
 const Description = styled.div`
@@ -730,6 +996,7 @@ const LinkMetaData = styled.div`
 
     @media ${device.mobileL} {
         width: 60%;
+        padding: 20px;
     }
 `;
 
@@ -748,6 +1015,11 @@ const LinkTitle = styled.h4`
     color: #CECECE;
     overflow: hidden;
     text-overflow: ellipsis;
+    width: 345px;
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const LinkDescription = styled.p`
@@ -757,6 +1029,11 @@ const LinkDescription = styled.p`
     max-height: 30px;
     overflow: hidden;
     text-overflow: ellipsis;
+    width: 345px;
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const LinkUrl = styled.p`
@@ -766,18 +1043,29 @@ const LinkUrl = styled.p`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    width: 345px;
+
+    @media (max-width: 840px) {
+        width: 100%;
+    }
 `;
 
 const LikeIcon = styled.div`
-    position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 12px;
     top: 30%;
     left: 17px;
     width: auto;
     height: auto;
     gap: 5px;
+    pointer-events: ${props => props.event};
+
+    svg {
+        cursor: pointer;
+    }
+
 `;
 
 const LikeText = styled.span`
@@ -788,11 +1076,11 @@ const LikeText = styled.span`
     line-height: 13px;
     text-align: center;
     color: #FFFFFF;
-    width: 50px;
+    width: 35px;
+    cursor: default;
 `;
 
 const ShareIcon = styled.div`
-    position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -801,6 +1089,7 @@ const ShareIcon = styled.div`
     width: auto;
     height: auto;
     gap: 5px;
+    pointer-events: ${props => props.event};
 `;
 
 const ShareText = styled.span`
@@ -819,8 +1108,7 @@ const ModalContainer = styled.div`
     flex-direction: column;
     justify-content: center;
     align-items: center;
-
-`
+`;
 
 const ModalText = styled.span`
     font-family: 'Lato', sans-serif;
@@ -831,13 +1119,13 @@ const ModalText = styled.span`
     color: #FFFFFF;
     margin-bottom: 35px;
     margin-top: 10px;
-`
+`;
 
 const ModalButtons = styled.div`
     width: 100%;
     display: flex;
     justify-content: space-evenly;
-`
+`;
 
 const ModalButtonCancel = styled.button`
     width: 134px;
@@ -847,7 +1135,7 @@ const ModalButtonCancel = styled.button`
     background: #FFFFFF;
     border-radius: 5px;
     border: none;
-`
+`;
 
 const ModalButtonConrfirm = styled.button`
     width: 134px;
@@ -855,27 +1143,27 @@ const ModalButtonConrfirm = styled.button`
     background: #1877F2;
     border-radius: 5px;
     border: none;
-`
+`;
 
 const TooltipContainer = styled.div`
     display: flex;
     flex-direction: column;
     height: auto;
     width: 100px;
-`
+`;
 
 const TooltipLike = styled.div`
-display: flex;
-align-items: center;
-justify-content: space-between;
-margin-bottom: 15px;
-`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+`;
 
 const TooltipImg = styled.img`
     width: 30px;
     height: 30px;
     border-radius: 50%;
-`
+`;
 
 const TooltipName = styled.span`
     font-family: 'Lato', sans-serif;
@@ -886,15 +1174,18 @@ const TooltipName = styled.span`
 `
 
 const RepostContainer = styled.div`
-    top: -33px;
-    right: 0;
     display: flex;
+    align-items: center;
     background-color: #1E1E1E;
     border-radius: 16px;
     height: 49px;
     width: 611px;
-    padding-left: 18px;
-    padding-top: 13px;
+    padding: 0 25px;
+
+    @media (max-width: 840px) {
+        border-radius: 0;
+        width: 100%;
+    }
 `
 
 const RepostText = styled.span`
@@ -906,15 +1197,6 @@ const RepostText = styled.span`
     text-align: center;
     margin-left: 10px;
     color: #FFFFFF;
-`
-
-const AllPost = styled.div`
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    border-radius: 16px;
-    background-color: #1E1E1E;
-    margin-top: 33px;
 `
 
 const RefreshButton = styled.button`

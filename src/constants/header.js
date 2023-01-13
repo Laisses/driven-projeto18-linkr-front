@@ -12,7 +12,7 @@ export default function Header () {
     const [rotate, setRotate] = useState(false)
     const [name, setName] = useState("");
     const [profiles, setProfiles] = useState([])
-    const { data, setToken, config, setData } = useContext(MyContext)
+    const { data, setToken, config, setData, followingIds } = useContext(MyContext)
 
     useEffect(() => {
         if (name.length < 3) {
@@ -35,6 +35,13 @@ export default function Header () {
         }
     }
 
+    profiles.sort(function (x, y) {
+        let a = followingIds.includes(x.id),
+            b = followingIds.includes(y.id);
+
+        return a - b
+    }).reverse()
+
     return (
         <>
         <Container>
@@ -56,6 +63,9 @@ export default function Header () {
                                 <span>
                                     <img src={p.photo} alt="Profile Pic" />
                                     <h2>{p.name}</h2>
+                                    <h3>
+                                        {followingIds.includes(p.id) ? "• following" : ""}
+                                    </h3>
                                 </span>
                             </StyledLink>
                         )
@@ -253,7 +263,7 @@ const InsideInputContainer = styled.div`
 
             &:hover {
                 cursor: pointer;
-                background-color: #C6C6C6;
+                background-color: gray;
             }
 
             img {
@@ -339,7 +349,7 @@ const OutsideInputContainer = styled.div`
 
             &:hover {
                 cursor: pointer;
-                background-color: #C6C6C6;
+                background-color: gray;
             }
 
             img {
@@ -365,4 +375,14 @@ const OutsideInputContainer = styled.div`
 `
 const StyledLink = styled(Link)`
     text-decoration: none;
+    h3 {
+        margin-left: 5px;
+        font-family: 'Lato';
+        font-style: normal;
+        font-weight: 400;
+        font-size: 19px;
+        line-height: 23px;
+
+        color: #C5C5C5;
+    }
 `
