@@ -1,16 +1,17 @@
 import axios from "axios"
 import styled from "styled-components"
 import { useContext, useEffect, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { BASE_URL } from "../constants/url"
+import { Link, useNavigate, useParams } from "react-router-dom"
+import { BASE_URL, BASE_URL_LOCAL } from "../constants/url"
 import { MyContext } from "../contexts/MyContext"
 import { Oval } from "react-loader-spinner"
 import { device } from "../constants/device"
 
 export default function TrendingList () {
     const [list, setList] = useState()
-    const { config, setCounter, counter, token } = useContext(MyContext)
+    const { config, setCounter, counter, token, setFollowingIds } = useContext(MyContext)
     const navigate = useNavigate()
+    const { userId } = useParams()
     
     async function getTrending () {
         if (token === null) return "You must be logged in to access this page"
@@ -29,8 +30,16 @@ export default function TrendingList () {
         getTrending()
     }, [counter])
 
+    useEffect(() => {
+        axios.get(`${BASE_URL_LOCAL}/following`, config)
+        .then((res) => {
+            setFollowingIds(res.data)
+            
+        })
+    }, [counter])
+
     return (
-        <Container>
+        <Container userId={userId}>
             <h1>trending</h1>
 
             {
@@ -65,7 +74,7 @@ const Container = styled.div`
     height: 406px;
     right: 260px;
     border-radius: 16px;
-    margin-top: 155px;
+    margin-top: ${props => props.userId ? "54px" : "155px"};
 
     @media (max-width: 840px) {
         display: none;
