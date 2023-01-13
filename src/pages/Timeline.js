@@ -308,13 +308,21 @@ export const Timeline = () => {
                                     <img src={c.user_photo} alt='user picture'/>
 
                                     <div>
-                                        {u.id === c.user_id
-                                            ? 
-                                        <h1>{c.user_name} <span>• post’s author</span></h1>
-                                            : 
-                                        <h1>{c.user_name}</h1>
+                                        {
+                                            u.id === c.user_id
+                                            ?
+                                            <h1>{c.user_name} <span>• post’s author</span></h1>
+                                            :
+                                            <h1>
+                                                {
+                                                followingIds.includes(c.user_id)
+                                                ?
+                                                <h1>{c.user_name} <span>• following</span></h1>
+                                                :
+                                                <h1>{c.user_name}</h1>
+                                                }
+                                            </h1>
                                         }
-
                                         <span>{c.comment}</span>
                                     </div>
                                 </li>
