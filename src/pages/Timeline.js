@@ -21,7 +21,7 @@ import { device } from "../constants/device";
 
 
 export const Timeline = () => {
-    const { config, counter, setCounter, data, token } = useContext(MyContext);
+    const { config, counter, setCounter, data, token, followingIds } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
     const [form, setForm] = useState({description: "", link: ""});
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -40,6 +40,7 @@ export const Timeline = () => {
         }
     })
     
+
     const deletePostHandler = async (postId) => {
         try {
             await axios.delete(`${BASE_URL_LOCAL}/timeline/${postId}`, config);
@@ -59,8 +60,8 @@ export const Timeline = () => {
             setPosts(res.data);
         } catch (error) {
             setErrorMessage(true);
-            alert("You must login to access this page");
-            navigate("/");
+            //alert("You must login to access this page");
+            //navigate("/");
         }
     };
 
@@ -266,7 +267,7 @@ export const Timeline = () => {
                                         navigate(`/hashtag/${tag.replace('#', '')}`)
                                     }}
                                 >
-                                    <Description>{description}</Description>
+                                    <Description>{description || ""}</Description>
                                 </ReactTagify>
                                 :
                                 <EditInput
@@ -333,14 +334,23 @@ export const Timeline = () => {
     };
 
     const Posts = () => {
+        const followedPosts = posts.filter((p) => {
+            if (followingIds.includes(p.user.id)) {
+                return true
+            }
+        })
+
         if (!posts) {
             return <Message>Loading...</Message>
-        } else if (posts.length === 0) {
-            return <Message>There are no posts yet</Message>
+        } else if(followingIds.length === 0) {
+            return <Message>You don't follow anyone yet. Search for new friends!</Message>
+        } else if (followedPosts.length === 0) {
+            return <Message>No posts found from your friends</Message>
         } else if (posts) {
+            
             return (
                 <ul>
-                    {posts.map(p => <ListofPosts
+                    {followedPosts.map(p => <ListofPosts
                         key={p.id}
                         {...p}
                     />)}
