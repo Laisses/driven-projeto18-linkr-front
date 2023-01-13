@@ -1,8 +1,8 @@
-import { BASE_URL_LOCAL } from "../constants/url";
+import { BASE_URL, BASE_URL_LOCAL } from "../constants/url";
 import styled from "styled-components";
 import { IoIosHeart, IoIosHeartEmpty } from "react-icons/io";
-import { TiDelete, TiPencil, TiTrash } from "react-icons/ti";
-import { BiRepost } from "react-icons/bi";
+import { TiPencil, TiTrash } from "react-icons/ti";
+import { BiRepost, BiRefresh } from "react-icons/bi";
 import { useContext, useEffect, useState } from "react";
 import { MyContext } from "../contexts/MyContext";
 import TrendingList from "../components/trending";
@@ -16,18 +16,21 @@ import { useNavigate } from "react-router-dom";
 import DeleteReactModal from "react-modal";
 import ShareReactModal from "react-modal";
 import { device } from "../constants/device";
+import useInterval from "use-interval";
 
 
 export const Timeline = () => {
     const { config, counter, setCounter, data, token } = useContext(MyContext);
     const [posts, setPosts] = useState([]);
-    const [form, setForm] = useState({description: "", link: ""});
+    const [form, setForm] = useState({ description: "", link: "" });
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deleteModalPostId, setDeleteModalPostId] = useState(null);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [shareModalPostId, setShareModalPostId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);
+    const [timestamp, setTimestamp] = useState(null);
+    const [nextPosts, setNextPosts] = useState([]);
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -36,7 +39,11 @@ export const Timeline = () => {
             navigate("/")
         }
     })
-    
+
+    useInterval(async () => {
+        await getNewPosts();
+    }, 15000);
+
     const deletePostHandler = async (postId) => {
         try {
             await axios.delete(`${BASE_URL_LOCAL}/timeline/${postId}`, config);
@@ -52,8 +59,9 @@ export const Timeline = () => {
         if (token === null) return "You must be logged in to access this page"
 
         try {
-            const res = await axios.get(`${BASE_URL_LOCAL}/timeline`, config);
+            const res = await axios.get(`${BASE_URL}/timeline`, config);
             setPosts(res.data);
+            setTimestamp(new Date().toISOString());
         } catch (error) {
             setErrorMessage(true);
             alert("You must login to access this page");
@@ -61,16 +69,26 @@ export const Timeline = () => {
         }
     };
 
+    const getNewPosts = async () => {
+        try {
+            const res = await axios.get(`${BASE_URL}/timeline?timestamp=${timestamp}`, config);
+            setNextPosts(res.data.concat(nextPosts));
+            setTimestamp(new Date().toISOString());
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     const postRepost = async (postId) => {
-            const request = axios.post(`${BASE_URL_LOCAL}/reposts`, {id: postId}, config);
-            request.then(()=> {
-                setIsShareModalOpen(false);
-                setShareModalPostId(null)
-                getPosts();
-            });
-            request.catch ((err) => {
-                alert("Algo deu errado e a culpa é nossa. =/");
-                console.log(err);
+        const request = axios.post(`${BASE_URL_LOCAL}/reposts`, { id: postId }, config);
+        request.then(() => {
+            setIsShareModalOpen(false);
+            setShareModalPostId(null)
+            getPosts();
+        });
+        request.catch((err) => {
+            alert("Algo deu errado e a culpa é nossa. =/");
+            console.log(err);
         });
     }
 
@@ -83,10 +101,10 @@ export const Timeline = () => {
     }, [setErrorMessage]);
 
     const likeHandler = (postId) => {
-        const request = axios.post(`${BASE_URL_LOCAL}/likes`, {id: postId}, config);
-            request.then(() => {
-                getPosts();
-            });
+        const request = axios.post(`${BASE_URL_LOCAL}/likes`, { id: postId }, config);
+        request.then(() => {
+            getPosts();
+        });
         request.catch((err) => {
             console.log(err);
         });
@@ -120,7 +138,7 @@ export const Timeline = () => {
 
     const submitNewDesc = async (id, text, onErrorFn) => {
         try {
-            await axios.put(`${BASE_URL_LOCAL}/timeline`, {post_id: id, description: text}, config);
+            await axios.put(`${BASE_URL_LOCAL}/timeline`, { post_id: id, description: text }, config);
             getPosts();
         } catch (err) {
             alert("Sorry! Something went wrong, please try again later!")
@@ -133,14 +151,14 @@ export const Timeline = () => {
         const [editing, setEditing] = useState(false);
         const [edit, setEdit] = useState(false);
         const [text, setText] = useState(description);
-        
+
         const tooltipLikesInfo = (likes) => {
             const result = likes.map((like) => {
                 return (
-                <TooltipLike key={like.user_id}>
-                <TooltipImg src={like.user_photo}/>
-                <TooltipName>{like.user_name}</TooltipName>
-                </TooltipLike>)
+                    <TooltipLike key={like.user_id}>
+                        <TooltipImg src={like.user_photo} />
+                        <TooltipName>{like.user_name}</TooltipName>
+                    </TooltipLike>)
             }, [])
             return <TooltipContainer>{result}</TooltipContainer>
         }
@@ -154,105 +172,105 @@ export const Timeline = () => {
 
         return (
             <AllPost>
-                {isRepost ? 
-                <RepostContainer>
-                    <BiRepost size={"20px"} color="white"/>
-                    <RepostText>Re-posted by {repostedBy}</RepostText>
-                </RepostContainer>
-                :
-                <></>}
+                {isRepost ?
+                    <RepostContainer>
+                        <BiRepost size={"20px"} color="white" />
+                        <RepostText>Re-posted by {repostedBy}</RepostText>
+                    </RepostContainer>
+                    :
+                    <></>}
                 <PostsContainer>
-                <ProfilePicture
-                    src={u.photo}
-                    alt="profile picture"
-                />
-                <Post>
-                    <PostHeader>
-                        <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
+                    <ProfilePicture
+                        src={u.photo}
+                        alt="profile picture"
+                    />
+                    <Post>
+                        <PostHeader>
+                            <StyledLink to={`/user/${u.id}`}><Username>{u.name}</Username></StyledLink>
+                            {
+                                data.user.id === u.id
+                                    ?
+                                    <HeaderIcons>
+                                        <div>
+                                            <EditIcon onClick={() => {
+                                                setEdit(!edit);
+                                                setText(description);
+                                            }}>
+                                                <TiPencil size={"20px"} />
+                                            </EditIcon>
+                                        </div>
+                                        <div>
+                                            <DeleteIcon onClick={() => {
+                                                openDeleteModal(id)
+                                            }}>
+                                                <TiTrash size={"20px"} />
+                                            </DeleteIcon>
+                                        </div>
+                                    </HeaderIcons>
+                                    :
+                                    <></>
+                            }
+                        </PostHeader>
                         {
-                            data.user.id === u.id
+                            !edit
                                 ?
-                                <HeaderIcons>
-                                <div>
-                                    <EditIcon onClick={() => {
-                                        setEdit(!edit);
-                                        setText(description);
-                                    }}>
-                                        <TiPencil size={"20px"} />
-                                    </EditIcon>
-                                </div>
-                                <div>
-                                    <DeleteIcon onClick={() => {
-                                        openDeleteModal(id)
-                                    }}>
-                                        <TiTrash size={"20px"} />
-                                    </DeleteIcon>
-                                </div>
-                                </HeaderIcons>
+                                <ReactTagify
+                                    tagStyle={tagStyle}
+                                    tagClicked={(tag) => {
+                                        navigate(`/hashtag/${tag.replace('#', '')}`)
+                                    }}
+                                >
+                                    <Description>{description || ""}</Description>
+                                </ReactTagify>
                                 :
-                                <></>
+                                <EditInput
+                                    id="edit"
+                                    name="edit"
+                                    value={text}
+                                    onChange={e => setText(e.target.value)}
+                                    disabled={editing}
+                                    autoFocus={true}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            editHashtag(id, text)
+                                            setEditing(true);
+                                            submitNewDesc(id, text, () => setEditing(false));
+                                        } else if (e.key === "Escape") {
+                                            setEdit(false);
+                                            setText(description);
+                                        }
+                                    }}
+                                />
                         }
-                    </PostHeader>
-                    {
-                        !edit
-                            ?
-                            <ReactTagify
-                                tagStyle={tagStyle}
-                                tagClicked={(tag) => {
-                                    navigate(`/hashtag/${tag.replace('#', '')}`)
-                                }}
-                            >
-                                <Description>{description}</Description>
-                            </ReactTagify>
-                            :
-                            <EditInput
-                                id="edit"
-                                name="edit"
-                                value={text}
-                                onChange={e => setText(e.target.value)}
-                                disabled={editing}
-                                autoFocus={true}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        editHashtag(id, text)
-                                        setEditing(true);
-                                        submitNewDesc(id, text, () => setEditing(false));
-                                    } else if (e.key === "Escape") {
-                                        setEdit(false);
-                                        setText(description);
-                                    }
-                                }}
+                        <LinkContainer>
+                            <LinkMetaData onClick={() => openNewTab(link.address)}>
+                                <LinkTitle>{link.title}</LinkTitle>
+                                <LinkDescription>{link.hint}</LinkDescription>
+                                <LinkUrl>{link.address}</LinkUrl>
+                            </LinkMetaData>
+                            <LinkImage
+                                src={link.image}
+                                alt="icon of text"
                             />
-                    }
-                    <LinkContainer>
-                        <LinkMetaData onClick={() => openNewTab(link.address)}>
-                            <LinkTitle>{link.title}</LinkTitle>
-                            <LinkDescription>{link.hint}</LinkDescription>
-                            <LinkUrl>{link.address}</LinkUrl>
-                        </LinkMetaData>
-                        <LinkImage
-                            src={link.image}
-                            alt="icon of text"
-                        />
-                    </LinkContainer>
-                </Post>
-                <LikeIcon id={`anchor-like-element${id}`} onClick={()=>{
-                    likeHandler(id)
+                        </LinkContainer>
+                    </Post>
+                    <LikeIcon id={`anchor-like-element${id}`} onClick={() => {
+                        likeHandler(id)
                     }}>
-                    {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"20px"} /> : <IoIosHeartEmpty size={"20px"} />}
-                    <LikeText>{`${likes.length} likes`}</LikeText>
-                </LikeIcon>
-                <Tooltip anchorId={`anchor-like-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
-                <ShareIcon id={`anchor-share-element${id}`} onClick={()=>{
-                    openShareModal(id)
+                        {likes.filter(like => like.user_id === data.user.id).length ? <IoIosHeart color="red" size={"20px"} /> : <IoIosHeartEmpty size={"20px"} />}
+                        <LikeText>{`${likes.length} likes`}</LikeText>
+                    </LikeIcon>
+                    <Tooltip anchorId={`anchor-like-element${id}`} place="bottom">{tooltipLikesInfo(likes)}</Tooltip>
+                    <ShareIcon id={`anchor-share-element${id}`} onClick={() => {
+                        openShareModal(id)
                     }}>
-                    <BiRepost size={"20px"} />
-                    <ShareText>{`${reposts.length} re-posts`}</ShareText>
-                </ShareIcon>
-                <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
-            </PostsContainer>
+                        <BiRepost size={"20px"} />
+                        <ShareText>{`${reposts.length} re-posts`}</ShareText>
+                    </ShareIcon>
+                    <Tooltip anchorId={`anchor-share-element${id}`} place="bottom">Hello Shares</Tooltip>
+                </PostsContainer>
             </AllPost>
-            );
+        );
     };
 
     const Posts = () => {
@@ -330,21 +348,53 @@ export const Timeline = () => {
         setIsShareModalOpen(false)
     }
 
+    const NewPostsButton = () => {
+
+        if (nextPosts.length === 1) {
+            return (
+                <RefreshButton onClick={() => {
+                    setPosts(nextPosts.concat(posts));
+                    setNextPosts([]);
+                }}>
+                    <RefreshButtonSpan>
+                        1 new post, load more!
+                    </RefreshButtonSpan>
+                    <BiRefresh size={"22px"} />
+                </RefreshButton>
+            );
+        } else if (nextPosts.length > 1) {
+            return (
+                <RefreshButton onClick={() => {
+                    setPosts(nextPosts.concat(posts));
+                    setNextPosts([]);
+                }}>
+                    <RefreshButtonSpan>
+                        {nextPosts.length} news post, load more!
+                    </RefreshButtonSpan>
+                    <BiRefresh size={"22px"} />
+                </RefreshButton>
+            );
+        } else {
+            return <div></div>
+        }
+    };
+
     return (
         <>
             <Header />
             <DeleteReactModal
-                    isOpen={isDeleteModalOpen}
-                    contentLabel="Minimal Modal Example"
-                    style={{overlay: {
+                isOpen={isDeleteModalOpen}
+                contentLabel="Minimal Modal Example"
+                style={{
+                    overlay: {
                         position: 'fixed',
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
                         backgroundColor: 'rgba(255, 255, 255, 0.75)',
-                      },
-                      content: {
+                    },
+                    content: {
                         position: 'absolute',
                         width: '497px',
                         height: '262px',
@@ -360,28 +410,30 @@ export const Timeline = () => {
                         outline: 'none',
                         padding: '20px',
 
-                      }}}
-                >
-                    <ModalContainer>
-                        <ModalText>Are you sure you want to delete this post?</ModalText>
-                        <ModalButtons>
+                    }
+                }}
+            >
+                <ModalContainer>
+                    <ModalText>Are you sure you want to delete this post?</ModalText>
+                    <ModalButtons>
                         <ModalButtonCancel onClick={closeDeleteModal}>Cancelar</ModalButtonCancel>
                         <ModalButtonConrfirm onClick={() => deletePostHandler(deleteModalPostId)}>Confirmar</ModalButtonConrfirm>
-                        </ModalButtons>
-                    </ModalContainer>
+                    </ModalButtons>
+                </ModalContainer>
             </DeleteReactModal>
             <ShareReactModal
-                    isOpen={isShareModalOpen}
-                    contentLabel="Minimal Modal Example"
-                    style={{overlay: {
+                isOpen={isShareModalOpen}
+                contentLabel="Minimal Modal Example"
+                style={{
+                    overlay: {
                         position: 'fixed',
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
                         backgroundColor: 'rgba(255, 255, 255, 0.75)',
-                      },
-                      content: {
+                    },
+                    content: {
                         position: 'absolute',
                         width: '497px',
                         height: '262px',
@@ -397,15 +449,16 @@ export const Timeline = () => {
                         outline: 'none',
                         padding: '20px',
 
-                      }}}
-                >
-                    <ModalContainer>
-                        <ModalText>Are you sure you want to re-post this post?</ModalText>
-                        <ModalButtons>
+                    }
+                }}
+            >
+                <ModalContainer>
+                    <ModalText>Are you sure you want to re-post this post?</ModalText>
+                    <ModalButtons>
                         <ModalButtonCancel onClick={closeShareModal}>Cancelar</ModalButtonCancel>
                         <ModalButtonConrfirm onClick={() => postRepost(shareModalPostId)}>Confirmar</ModalButtonConrfirm>
-                        </ModalButtons>
-                    </ModalContainer>
+                    </ModalButtons>
+                </ModalContainer>
             </ShareReactModal>
             <TimelineBackground>
                 <TimelineContainer>
@@ -441,18 +494,18 @@ export const Timeline = () => {
                             }
                         </Form>
                     </PublishContainer>
+                    <NewPostsButton />
                     {!errorMessage
                         ? <Posts />
                         : <Message>An error occured while trying to fetch the posts, please refresh the page</Message>
                     }
                 </TimelineContainer>
-                <TrendingList/>
+                <TrendingList />
             </TimelineBackground>
         </>
     );
 };
 
-//Styled Components
 const StyledLink = styled(Link)`
     text-decoration: none;
     color: #FFFFFF;
@@ -849,7 +902,7 @@ const RepostText = styled.span`
     font-style: normal;
     font-weight: 400;
     font-size: 11px;
-    line-height: 13px;  
+    line-height: 13px;
     text-align: center;
     margin-left: 10px;
     color: #FFFFFF;
@@ -863,3 +916,24 @@ const AllPost = styled.div`
     background-color: #1E1E1E;
     margin-top: 33px;
 `
+
+const RefreshButton = styled.button`
+    width: 100%;
+    height: 61px;
+    max-width: 611px;
+    background-color: #1877F2;
+    color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    font-family: 'Lato', sans-serif;
+    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+`;
+
+const RefreshButtonSpan = styled.span`
+    color: #ffffff;
+    margin-right: 14px;
+`;
